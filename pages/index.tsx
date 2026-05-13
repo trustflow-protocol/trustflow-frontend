@@ -108,9 +108,6 @@ const Home: NextPage = () => (
       <title>TrustFlow — Decentralized Escrow on Stellar</title>
       <meta name="description" content="TrustFlow is a next-generation gig-economy protocol built on Stellar & Soroban. Trustless escrow, milestone payments, and community dispute resolution — zero fees, zero sign-ups." />
       <link rel="icon" href="/favicon.ico" />
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
     </Head>
 
     <div className="min-h-screen bg-gray-950 text-gray-100" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -269,7 +266,7 @@ const Home: NextPage = () => (
             Built to be trustless,<br className="hidden md:block" /> not just trustworthy
           </h2>
           <p className="mt-4 text-lg text-gray-400 max-w-xl leading-relaxed">
-            Security isn't an afterthought — it's the protocol's core promise.
+            Security isn&apos;t an afterthought — it&apos;s the protocol&apos;s core promise.
           </p>
         </div>
 
@@ -295,10 +292,10 @@ const Home: NextPage = () => (
           <div className="mb-14">
             <span className="text-xs font-bold tracking-widest uppercase text-indigo-400">Roadmap</span>
             <h2 className="mt-3 text-4xl md:text-5xl font-black tracking-tight text-white">
-              What's coming next
+              What&apos;s coming next
             </h2>
             <p className="mt-4 text-lg text-gray-400 max-w-xl leading-relaxed">
-              TrustFlow is actively growing. Here's a glimpse of what's on the horizon.
+              TrustFlow is actively growing. Here&apos;s a glimpse of what&apos;s on the horizon.
             </p>
           </div>
 

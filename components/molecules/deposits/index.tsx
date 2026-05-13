@@ -1,8 +1,6 @@
 import React from 'react'
-import styles from './style.module.css'
-import { Utils } from '../../../shared/utils'
 import { Spacer } from '../../atoms/spacer'
-import { crowdfund } from '../../../shared/contracts'
+import { Utils } from '../../../shared/utils'
 
 export interface IDepositsProps {
   address: string
@@ -11,13 +9,15 @@ export interface IDepositsProps {
   symbol?: string
 }
 
+/**
+ * Deposits — shows the user's escrowed balance.
+ *
+ * TODO: fetch real balance from the TrustFlow contract once RPC integration
+ * is wired up in shared/contracts.ts.
+ */
 export function Deposits(props: IDepositsProps) {
-  const [balance, setBalance] = React.useState<BigInt>(BigInt(0))
-
-  React.useEffect(() => {
-    crowdfund.balance({ user: props.address }).then(setBalance)
-  }, [props.address])
-
+  // Placeholder — will be replaced with contract call
+  const balance = BigInt(0)
 
   if (Number(balance) <= 0) {
     return <React.Fragment />
@@ -26,17 +26,12 @@ export function Deposits(props: IDepositsProps) {
   return (
     <>
       <Spacer rem={2} />
-      <h6>You’ve Pledged</h6>
-      <div className={styles.pledgeContainer}>
-        <span className={styles.values}>
+      <h6>You&apos;ve Deposited</h6>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <span style={{ fontSize: '1.25rem', fontWeight: 700 }}>
           {Utils.formatAmount(balance, props.decimals)}{' '}
           <span title={props.name}>{props.symbol}</span>
         </span>
-        {/*<a>
-          <h6>
-            09/22/22 <Image src={OpenSvg} width={12} height={12} alt={'Open'} />
-          </h6>
-        </a>*/}
       </div>
     </>
   )
