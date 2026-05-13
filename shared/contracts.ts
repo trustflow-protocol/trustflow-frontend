@@ -1,17 +1,10 @@
-import * as Abundance from 'abundance-token'
-import * as Crowdfund from 'crowdfund-contract'
-import { Server } from 'soroban-client'
-import config from './config.json'
-const { network, rpcUrl } = config
-
-export const abundance = new Abundance.Contract({
-  rpcUrl,
-  ...Abundance.networks[network as keyof typeof Abundance.networks],
-})
-
-export const crowdfund = new Crowdfund.Contract({
-  rpcUrl,
-  ...Crowdfund.networks[network as keyof typeof Crowdfund.networks],
-})
-
-export const server = new Server(rpcUrl, { allowHttp: rpcUrl.startsWith('http:') })
+/**
+ * TrustFlow contract config.
+ *
+ * Replace CONTRACT_ID and RPC_URL with your deployed Soroban contract details.
+ * These values are read from environment variables at build time.
+ */
+export const CONTRACT_ID = process.env.NEXT_PUBLIC_CONTRACT_ID ?? ''
+export const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL ?? 'https://soroban-testnet.stellar.org'
+export const NETWORK_PASSPHRASE =
+  process.env.NEXT_PUBLIC_NETWORK_PASSPHRASE ?? 'Test SDF Network ; September 2015'
