@@ -3,10 +3,14 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Next.js](https://img.shields.io/badge/Next.js-13-black)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/trustflow-protocol/trustflow-frontend/blob/main/CONTRIBUTING.md)
+[![Good First Issues](https://img.shields.io/github/issues/trustflow-protocol/trustflow-frontend/good%20first%20issue?label=good%20first%20issues)](https://github.com/trustflow-protocol/trustflow-frontend/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 
 > **The decentralized UI for the TrustFlow gig-economy protocol.**
 
 TrustFlow Frontend is the Next.js web application that gives users a seamless interface for creating escrows, tracking milestones, resolving disputes, and managing their on-chain reputation — all powered by Soroban smart contracts on the Stellar network.
+
+**🚀 [Live Demo](#) (Coming Soon)** | **📖 [Documentation](https://docs.trustflow.xyz)** | **🤝 [Contributing](CONTRIBUTING.md)**
 
 ---
 
@@ -14,10 +18,35 @@ TrustFlow Frontend is the Next.js web application that gives users a seamless in
 
 - 🔗 **Wallet Integration**: One-click Stellar wallet connection via Freighter.
 - 💼 **Escrow Dashboard**: Create, fund, and track milestone-based escrow vaults.
+- 🎯 **Gig Explorer**: Browse and filter available gigs with search functionality.
+- 📝 **Gig Creation Wizard**: Multi-step form to create milestone-based gigs.
 - ⚖️ **Dispute Interface**: Submit evidence, monitor juror votes, and receive settlement outcomes.
 - 🌗 **Dark / Light Mode**: System-aware theme toggling via the `useTheme` hook.
 - 🔔 **Toast Notifications**: Non-blocking feedback for all transaction states.
 - 📱 **Responsive Design**: Mobile-first layout across all breakpoints.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework**: [Next.js 13](https://nextjs.org/) (Pages Router)
+- **Language**: [TypeScript 5](https://www.typescriptlang.org/)
+- **Styling**: [Tailwind CSS 3](https://tailwindcss.com/) + CSS Modules
+- **Blockchain**: [Stellar](https://stellar.org/) + [Soroban](https://soroban.stellar.org/)
+- **Wallet**: [Freighter](https://www.freighter.app/)
+- **State Management**: React Hooks + Context API
+
+---
+
+## 📄 Available Pages
+
+- **`/`** - Landing page with feature showcase
+- **`/dashboard`** - User dashboard (My Gigs)
+- **`/dashboard/disputes`** - Active disputes
+- **`/dashboard/profile`** - User profile and reputation
+- **`/dashboard/settings`** - Account settings
+- **`/explore`** - Browse available gigs
+- **`/create-gig`** - Multi-step gig creation wizard
 
 ---
 
@@ -82,8 +111,17 @@ NEXT_PUBLIC_ESCROW_CONTRACT_ID=your-contract-id
 # Development
 npm run dev
 
+# Lint code
+npm run lint
+
+# Type-check
+npm run typecheck
+
 # Production build
-npm run build && npm start
+npm run build
+
+# Start production server
+npm start
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
@@ -93,7 +131,9 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ## 📖 Component Guide
 
 ### Atoms
+
 Base-level, stateless UI primitives. Use these directly or compose them into molecules.
+
 - `Button` — primary, secondary, and loading states.
 - `AmountInput` — numeric input with token denomination label.
 - `ProgressBar` — milestone completion indicator.
@@ -101,30 +141,35 @@ Base-level, stateless UI primitives. Use these directly or compose them into mol
 - `ThemeToggle` — dark/light mode switcher (integrated in Navbar).
 
 **Using Toast Notifications:**
+
 ```tsx
 import { useGlobalToast } from '../pages/_app'
 
 function MyComponent() {
   const toast = useGlobalToast()
-  
+
   const handleSuccess = () => toast.success('Transaction confirmed!')
   const handleError = () => toast.error('Connection failed')
   const handleWarning = () => toast.warning('Low balance detected')
   const handleInfo = () => toast.info('Fetching data...')
-  
+
   return <button onClick={handleSuccess}>Show Toast</button>
 }
 ```
 
 ### Molecules
+
 Stateful compositions built from atoms.
+
 - `FormPledge` — full pledge form with validation and submission.
 - `TransactionModal` — step-by-step transaction status overlay.
 - `WalletData` — connected wallet summary card.
 - `Deposits` — list of active deposits with release controls.
 
 ### Organisms
+
 Full page sections wired to on-chain data.
+
 - `Navbar` — responsive top nav with wallet connect.
 - `Campaign` — campaign detail with funding progress.
 - `Pledge` — pledge workflow from input to confirmation.
@@ -141,10 +186,74 @@ Full page sections wired to on-chain data.
 
 ## 🗺️ Roadmap
 
-- [ ] **Profile Pages**: On-chain reputation and work history viewer.
-- [ ] **Dispute UI**: Full juror dashboard with evidence upload and voting.
-- [ ] **Mobile App**: React Native port leveraging shared hooks and types.
-- [ ] **Internationalisation (i18n)**: Multi-language support via next-intl.
+### ✅ Completed
+
+- [x] Landing page with feature showcase
+- [x] Dark/Light mode theming
+- [x] Toast notification system
+- [x] User dashboard with sidebar navigation
+- [x] Gig explorer with search and filtering
+- [x] Multi-step gig creation wizard
+- [x] Responsive mobile-first design
+
+### 🚧 In Progress
+
+- [ ] **Wallet Integration (#21)**: Full Freighter API integration
+- [ ] **Escrow SDK (#16)**: Connect gig creation to smart contracts
+- [ ] **Profile Pages (#10)**: On-chain reputation and work history viewer
+
+### 📋 Planned
+
+- [ ] **Dispute UI (#15)**: Full juror dashboard with evidence upload and voting
+- [ ] **Mobile Navbar (#34)**: Enhanced mobile navigation
+- [ ] **i18n Support (#8)**: Multi-language support via next-intl
+- [ ] **Real-time Updates (#12)**: WebSocket integration for live notifications
+
+[View all issues →](https://github.com/trustflow-protocol/trustflow-frontend/issues)
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions from the community! Whether you're fixing bugs, adding features, or improving documentation, your help is appreciated.
+
+### Quick Start for Contributors
+
+1. **Find an issue**: Check [good first issues](https://github.com/trustflow-protocol/trustflow-frontend/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) or [help wanted](https://github.com/trustflow-protocol/trustflow-frontend/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
+2. **Read the guide**: See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed instructions
+3. **Set up locally**: Follow the installation steps above
+4. **Make your changes**: Create a feature branch and commit your work
+5. **Submit a PR**: Open a pull request with a clear description
+
+### Development Workflow
+
+```bash
+# 1. Fork and clone the repo
+git clone https://github.com/YOUR_USERNAME/trustflow-frontend.git
+
+# 2. Create a feature branch
+git checkout -b feature/your-feature-name
+
+# 3. Make changes and test
+npm run dev
+npm run lint
+npm run typecheck
+npm run build
+
+# 4. Commit and push
+git commit -m "feat: add your feature"
+git push origin feature/your-feature-name
+```
+
+### Areas We Need Help
+
+- 🔗 **Blockchain Integration**: Freighter wallet and Soroban contract integration
+- 🎨 **UI Components**: Additional components and improvements
+- 📝 **Documentation**: Improving guides and code comments
+- 🧪 **Testing**: Adding unit and E2E tests
+- 🐛 **Bug Fixes**: Resolving reported issues
+
+[Read the full contributing guide →](CONTRIBUTING.md)
 
 ---
 
@@ -156,10 +265,20 @@ Full page sections wired to on-chain data.
 
 ---
 
-*Securing the future of work, one transaction at a time.*
+_Securing the future of work, one transaction at a time._
 
 ---
 
 ## 📜 License
 
 MIT License. Copyright (c) 2026 TrustFlow Protocol.
+
+## 📊 Project Status
+
+This project is under active development. The UI foundation is complete and ready for blockchain integration. We're actively seeking contributors, especially those with:
+
+- Stellar/Soroban smart contract experience
+- React/Next.js expertise
+- UI/UX design skills
+
+**Good First Issues**: [Start here](https://github.com/trustflow-protocol/trustflow-frontend/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
