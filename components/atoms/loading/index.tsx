@@ -2,11 +2,11 @@ import React from 'react'
 import Image from 'next/image'
 import { LoadingSvg } from '../../../assets/icons'
 
-export interface SpacerProps {
+export interface LoadingProps {
   size: number
 }
 
-export function Loading({ size }: SpacerProps) {
+export function Loading({ size }: LoadingProps) {
   return (
     <Image
       src={LoadingSvg}

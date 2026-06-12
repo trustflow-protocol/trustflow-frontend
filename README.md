@@ -97,8 +97,24 @@ Base-level, stateless UI primitives. Use these directly or compose them into mol
 - `Button` — primary, secondary, and loading states.
 - `AmountInput` — numeric input with token denomination label.
 - `ProgressBar` — milestone completion indicator.
-- `Toast` — auto-dismissing notification bubble.
-- `ThemeToggle` — dark/light mode switcher.
+- `Toast` — auto-dismissing notification bubble (integrated globally).
+- `ThemeToggle` — dark/light mode switcher (integrated in Navbar).
+
+**Using Toast Notifications:**
+```tsx
+import { useGlobalToast } from '../pages/_app'
+
+function MyComponent() {
+  const toast = useGlobalToast()
+  
+  const handleSuccess = () => toast.success('Transaction confirmed!')
+  const handleError = () => toast.error('Connection failed')
+  const handleWarning = () => toast.warning('Low balance detected')
+  const handleInfo = () => toast.info('Fetching data...')
+  
+  return <button onClick={handleSuccess}>Show Toast</button>
+}
+```
 
 ### Molecules
 Stateful compositions built from atoms.
