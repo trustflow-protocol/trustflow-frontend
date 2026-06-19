@@ -6,6 +6,7 @@ import { ThemeToggle } from '../../atoms/theme-toggle';
 const NAV_LINKS = [
   { label: 'Home',      href: '/'          },
   { label: 'Explore',   href: '/explore'   },
+  { label: 'Leaderboard', href: '/leaderboard' },
   { label: 'Dashboard', href: '/dashboard' },
   { label: 'Escrow',    href: '/escrow'    },
 ];

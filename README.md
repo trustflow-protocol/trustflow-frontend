@@ -19,6 +19,7 @@ TrustFlow Frontend is the Next.js web application that gives users a seamless in
 - 🔗 **Wallet Integration**: One-click Stellar wallet connection via Freighter.
 - 💼 **Escrow Dashboard**: Create, fund, and track milestone-based escrow vaults.
 - 🎯 **Gig Explorer**: Browse and filter available gigs with search functionality.
+- 🏆 **Freelancer Leaderboard**: Compare top earners and highest-reputation workers.
 - 📝 **Gig Creation Wizard**: Multi-step form to create milestone-based gigs.
 - ⚖️ **Dispute Interface**: Submit evidence, monitor juror votes, and receive settlement outcomes.
 - 🌗 **Dark / Light Mode**: System-aware theme toggling via the `useTheme` hook.
@@ -46,6 +47,7 @@ TrustFlow Frontend is the Next.js web application that gives users a seamless in
 - **`/dashboard/profile`** - User profile and reputation
 - **`/dashboard/settings`** - Account settings
 - **`/explore`** - Browse available gigs
+- **`/leaderboard`** - Global freelancer rankings by earnings and reputation
 - **`/create-gig`** - Multi-step gig creation wizard
 
 ---
@@ -173,6 +175,12 @@ Full page sections wired to on-chain data.
 - `Navbar` — responsive top nav with wallet connect.
 - `Campaign` — campaign detail with funding progress.
 - `Pledge` — pledge workflow from input to confirmation.
+
+## 🧭 Architecture Notes
+
+- The project currently uses the Next.js Pages Router. The Freelancer Leaderboard is implemented at `pages/leaderboard.tsx` to match the existing routing convention.
+- The leaderboard is backed by typed local sample data until the protocol exposes a public ranking endpoint or indexer query. The UI sorts the same dataset by total escrow earnings or reputation score.
+- No new runtime dependencies were added for this feature.
 
 ---
 
