@@ -4,6 +4,8 @@ import Head from 'next/head'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { Navbar } from '../components/organisms'
+import { USDCConverter } from '../components/molecules'
+import { useUSDCPrice, formatUSD, convertToUSD } from '../hooks/useUSDCPrice'
 
 interface NavItem {
   label: string
@@ -19,11 +21,18 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Settings', href: '/dashboard/settings', icon: '⚙️', description: 'Account and preferences' },
 ]
 
+// Placeholder escrow balance in USDC for demo purposes
+const ESCROW_USDC = 0
+
 const Dashboard: NextPage = () => {
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { price: usdcPrice, status: priceStatus } = useUSDCPrice()
 
   const isActive = (href: string) => router.pathname === href
+
+  const escrowUSD =
+    usdcPrice !== null ? formatUSD(convertToUSD(ESCROW_USDC, usdcPrice)) : null
 
   return (
     <>
@@ -109,26 +118,67 @@ const Dashboard: NextPage = () => {
 
             {/* Stats cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              {[
-                { label: 'Active Gigs', value: '0', icon: '💼', color: 'indigo' },
-                { label: 'In Escrow', value: '0 XLM', icon: '🔒', color: 'violet' },
-                { label: 'Completed', value: '0', icon: '✓', color: 'green' },
-                { label: 'Disputes', value: '0', icon: '⚖️', color: 'amber' },
-              ].map((stat) => (
-                <div
-                  key={stat.label}
-                  className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-2xl">{stat.icon}</span>
-                    <span className={`text-xs px-2 py-1 rounded-full bg-${stat.color}-100 dark:bg-${stat.color}-950 text-${stat.color}-700 dark:text-${stat.color}-300`}>
-                      Active
-                    </span>
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{stat.value}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</div>
+              {/* Active Gigs */}
+              <div className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-2xl">💼</span>
+                  <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
+                    Active
+                  </span>
                 </div>
-              ))}
+                <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">0</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Active Gigs</div>
+              </div>
+
+              {/* In Escrow — with live USD equivalent */}
+              <div className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-2xl">🔒</span>
+                  <span className="text-xs px-2 py-1 rounded-full bg-violet-100 dark:bg-violet-950 text-violet-700 dark:text-violet-300">
+                    Active
+                  </span>
+                </div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white mb-0.5">
+                  {ESCROW_USDC} USDC
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                  {priceStatus === 'loading' && escrowUSD === null
+                    ? 'Loading…'
+                    : escrowUSD !== null
+                    ? `≈ ${escrowUSD}`
+                    : '—'}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">In Escrow</div>
+              </div>
+
+              {/* Completed */}
+              <div className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-2xl">✓</span>
+                  <span className="text-xs px-2 py-1 rounded-full bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300">
+                    Active
+                  </span>
+                </div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">0</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Completed</div>
+              </div>
+
+              {/* Disputes */}
+              <div className="p-5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-2xl">⚖️</span>
+                  <span className="text-xs px-2 py-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300">
+                    Active
+                  </span>
+                </div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">0</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Disputes</div>
+              </div>
+            </div>
+
+            {/* USDC → USD Converter widget */}
+            <div className="mb-8 max-w-md">
+              <USDCConverter />
             </div>
 
             {/* Empty state */}
