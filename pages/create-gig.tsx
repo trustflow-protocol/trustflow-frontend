@@ -2,6 +2,8 @@ import { useState } from 'react'
 import type { NextPage } from 'next'
 import Head from 'next/head'
 import { Navbar } from '../components/organisms'
+import { MarkdownEditor } from '../components/molecules'
+import { MarkdownRenderer } from '../components/atoms'
 import { useGlobalToast } from './_app'
 
 interface Milestone {
@@ -193,19 +195,15 @@ const CreateGig: NextPage = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Description *
-                  </label>
-                  <textarea
+                  <MarkdownEditor
+                    label="Description"
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Provide detailed requirements, deliverables, and expectations..."
-                    rows={6}
-                    className={`w-full px-4 py-3 bg-white dark:bg-gray-800 border rounded-lg text-gray-900 dark:text-white ${
-                      errors.description ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
-                    }`}
+                    onChange={(value) => setFormData({ ...formData, description: value })}
+                    placeholder="Provide detailed requirements, deliverables, and expectations using markdown formatting..."
+                    height={300}
+                    error={errors.description}
+                    required
                   />
-                  {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -297,12 +295,15 @@ const CreateGig: NextPage = () => {
                     </div>
 
                     <div>
-                      <textarea
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Deliverables Description
+                      </label>
+                      <MarkdownEditor
                         value={milestone.description}
-                        onChange={(e) => updateMilestone(milestone.id, 'description', e.target.value)}
-                        placeholder="Describe deliverables for this milestone..."
-                        rows={2}
-                        className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white text-sm"
+                        onChange={(value) => updateMilestone(milestone.id, 'description', value)}
+                        placeholder="Describe deliverables for this milestone using markdown..."
+                        height={200}
+                        preview="edit"
                       />
                     </div>
 
@@ -365,9 +366,9 @@ const CreateGig: NextPage = () => {
 
                 <div>
                   <h3 className="font-bold text-gray-900 dark:text-white mb-3">Description</h3>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm whitespace-pre-wrap">
-                    {formData.description}
-                  </p>
+                  <div className="p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <MarkdownRenderer content={formData.description} />
+                  </div>
                 </div>
 
                 <div>
@@ -384,7 +385,9 @@ const CreateGig: NextPage = () => {
                           </span>
                         </div>
                         {m.description && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400">{m.description}</p>
+                          <div className="text-sm bg-gray-50 dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-700 mt-2">
+                            <MarkdownRenderer content={m.description} />
+                          </div>
                         )}
                         {m.duration && (
                           <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">Duration: {m.duration}</p>
