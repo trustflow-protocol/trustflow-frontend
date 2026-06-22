@@ -1,8 +1,9 @@
 import type { AppProps } from 'next/app'
-import { createContext, useContext } from 'react'
+import { createContext, useContext, useEffect } from 'react'
 import '../styles/globals.css'
 import { useToast } from '../hooks/useToast'
-import { ToastContainer } from '../components/atoms/toast'
+import { ClientErrorBoundary, ToastContainer } from '../components/atoms'
+import { initSentryClient } from '../shared/sentryClient'
 
 // Create a context for global toast access
 interface ToastContextValue {
@@ -25,9 +26,15 @@ export function useGlobalToast() {
 function MyApp({ Component, pageProps }: AppProps) {
   const { toasts, dismiss, success, error, warning, info } = useToast()
 
+  useEffect(() => {
+    void initSentryClient()
+  }, [])
+
   return (
     <ToastContext.Provider value={{ success, error, warning, info }}>
-      <Component {...pageProps} />
+      <ClientErrorBoundary>
+        <Component {...pageProps} />
+      </ClientErrorBoundary>
       <ToastContainer toasts={toasts} onDismiss={dismiss} />
     </ToastContext.Provider>
   )

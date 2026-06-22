@@ -105,7 +105,10 @@ Key variables:
 NEXT_PUBLIC_STELLAR_NETWORK=TESTNET
 NEXT_PUBLIC_SOROBAN_RPC_URL=https://soroban-testnet.stellar.org
 NEXT_PUBLIC_ESCROW_CONTRACT_ID=your-contract-id
+NEXT_PUBLIC_SENTRY_DSN=your-sentry-dsn
 ```
+
+`NEXT_PUBLIC_SENTRY_DSN` is optional. When it is omitted, the browser client skips Sentry initialization.
 
 ### Running
 
