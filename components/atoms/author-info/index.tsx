@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react'
+import React from 'react'
 import styles from './style.module.css'
 import Image, { StaticImageData } from 'next/image'
 
@@ -11,7 +11,7 @@ export interface AuthorInfoProps {
 export function AuthorInfo({ image, author, dateTime }: AuthorInfoProps) {
   return (
     <div className={styles.content}>
-      <Image src={image} width={36} height={36} alt="avatar" />
+      <Image src={image} width={36} height={36} sizes="36px" alt={`${author} avatar`} />
       <div className={styles.author}>
         <span>{dateTime}</span>
         <br />
