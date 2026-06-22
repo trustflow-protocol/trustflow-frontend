@@ -1,0 +1,17 @@
+{
+  "Nav": {
+    "home": "Inicio",
+    "explore": "Explorar",
+    "leaderboard": "Clasificación",
+    "dashboard": "Panel",
+    "escrow": "Depósito en garantía",
+    "launchApp": "Abrir app",
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú"
+  },
+  "LocaleSwitcher": {
+    "label": "Idioma",
+    "en": "English",
+    "es": "Español"
+  }
+}
