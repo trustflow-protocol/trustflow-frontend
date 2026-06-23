@@ -1,8 +1,11 @@
 import type { AppProps } from 'next/app'
 import { createContext, useContext } from 'react'
+import { useRouter } from 'next/router'
+import { NextIntlClientProvider } from 'next-intl'
 import '../styles/globals.css'
 import { useToast } from '../hooks/useToast'
 import { ToastContainer } from '../components/atoms/toast'
+import { defaultLocale, getMessages } from '../i18n/messages'
 
 // Create a context for global toast access
 interface ToastContextValue {
@@ -24,12 +27,20 @@ export function useGlobalToast() {
 
 function MyApp({ Component, pageProps }: AppProps) {
   const { toasts, dismiss, success, error, warning, info } = useToast()
+  const { locale } = useRouter()
+  const activeLocale = locale ?? defaultLocale
 
   return (
-    <ToastContext.Provider value={{ success, error, warning, info }}>
-      <Component {...pageProps} />
-      <ToastContainer toasts={toasts} onDismiss={dismiss} />
-    </ToastContext.Provider>
+    <NextIntlClientProvider
+      locale={activeLocale}
+      messages={getMessages(activeLocale)}
+      timeZone="UTC"
+    >
+      <ToastContext.Provider value={{ success, error, warning, info }}>
+        <Component {...pageProps} />
+        <ToastContainer toasts={toasts} onDismiss={dismiss} />
+      </ToastContext.Provider>
+    </NextIntlClientProvider>
   )
 }
 
