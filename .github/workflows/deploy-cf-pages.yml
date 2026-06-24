@@ -29,8 +29,6 @@ jobs:
 
       - name: Build for Cloudflare Pages
         run: npx @cloudflare/next-on-pages
-        env:
-          NODE_ENV: production
 
       - name: Publish to Cloudflare Pages
         uses: cloudflare/pages-action@v1
