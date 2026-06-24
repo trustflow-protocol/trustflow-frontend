@@ -1,49 +1,41 @@
-import { useEffect, useState } from "react";
-import { isConnected, getUserInfo } from "@stellar/freighter-api";
+import { useEffect, useState, useCallback } from "react";
+import { isConnected, getUserInfo, watchWallet } from "@stellar/freighter-api";
 
-let address: string;
-
-let addressLookup = (async () => {
-  if (await isConnected()) return getUserInfo()
-})();
-
-// returning the same object identity every time avoids unnecessary re-renders
-const addressObject = {
-  address: '',
-  displayName: '',
-};
-
-const addressToHistoricObject = (address: string) => {
-  addressObject.address = address;
-  addressObject.displayName = `${address.slice(0, 4)}...${address.slice(-4)}`;
-  return addressObject
-};
+export interface AccountInfo {
+  address: string;
+  displayName: string;
+}
 
 /**
- * Returns an object containing `address` and `displayName` properties, with
- * the address fetched from Freighter's `getPublicKey` method in a
- * render-friendly way.
- *
- * Before the address is fetched, returns null.
- *
- * Caches the result so that the Freighter lookup only happens once, no matter
- * how many times this hook is called.
- *
- * NOTE: This does not update the return value if the user changes their
- * Freighter settings; they will need to refresh the page.
+ * Returns the currently connected Freighter account, or `null` when no wallet
+ * is connected. Updates automatically when the user switches profiles inside
+ * the Freighter extension — no page refresh required.
  */
-export function useAccount(): typeof addressObject | null {
-  const [, setLoading] = useState(address === undefined);
+export function useAccount(): AccountInfo | null {
+  const [address, setAddress] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (address !== undefined) return;
-
-    addressLookup
-      .then(user => { if (user) address = user.publicKey })
-      .finally(() => { setLoading(false) });
+  const syncAccount = useCallback(async () => {
+    const connected = await isConnected();
+    if (!connected) {
+      setAddress(null);
+      return;
+    }
+    const user = await getUserInfo();
+    setAddress(user?.publicKey ?? null);
   }, []);
 
-  if (address) return addressToHistoricObject(address);
+  useEffect(() => {
+    syncAccount();
 
-  return null;
-};
+    // watchWallet fires whenever the active Freighter account changes so we
+    // update state without requiring a page refresh.
+    const unsubscribe = watchWallet(() => { void syncAccount(); });
+    return () => { unsubscribe?.(); };
+  }, [syncAccount]);
+
+  if (!address) return null;
+  return {
+    address,
+    displayName: `${address.slice(0, 4)}...${address.slice(-4)}`,
+  };
+}
