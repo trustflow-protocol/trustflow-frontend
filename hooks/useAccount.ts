@@ -21,7 +21,7 @@ export function useAccount(): AccountInfo | null {
     } catch {
       setAddress(null);
     }
- %}, []);
+  }, []);
 
   useEffect(() => {
     syncAccount();
