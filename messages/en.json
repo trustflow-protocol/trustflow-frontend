@@ -1,0 +1,17 @@
+{
+  "Nav": {
+    "home": "Home",
+    "explore": "Explore",
+    "leaderboard": "Leaderboard",
+    "dashboard": "Dashboard",
+    "escrow": "Escrow",
+    "launchApp": "Launch App",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
+  },
+  "LocaleSwitcher": {
+    "label": "Language",
+    "en": "English",
+    "es": "Español"
+  }
+}
