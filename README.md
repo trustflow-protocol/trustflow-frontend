@@ -180,6 +180,7 @@ Full page sections wired to on-chain data.
 
 - The project currently uses the Next.js Pages Router. The Freelancer Leaderboard is implemented at `pages/leaderboard.tsx` to match the existing routing convention.
 - The leaderboard is backed by typed local sample data until the protocol exposes a public ranking endpoint or indexer query. The UI sorts the same dataset by total escrow earnings or reputation score.
+- The profile page fetches reputation, bio, and past gigs from `GET /api/profile`, which proxies to `PROFILE_API_BASE_URL` when configured and falls back to typed mock data for local/dev environments.
 - No new runtime dependencies were added for this feature.
 
 ---
