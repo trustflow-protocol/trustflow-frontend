@@ -14,7 +14,8 @@
     "build:contracts": "./target/bin/soroban contract build",
     "bindings:crowdfund": "./target/bin/soroban contract bindings typescript --wasm ./target/wasm32-unknown-unknown/release/soroban_crowdfund_contract.wasm --id $(cat ./.soroban-example-dapp/crowdfund_id) --output-dir ./.soroban-example-dapp/crowdfund-contract --network $(cat ./.soroban-example-dapp/network) --overwrite",
     "bindings:abundance": "./target/bin/soroban contract bindings typescript --wasm ./target/wasm32-unknown-unknown/release/abundance_token.wasm --id $(cat ./.soroban-example-dapp/abundance_token_id) --output-dir ./.soroban-example-dapp/abundance-token --network $(cat ./.soroban-example-dapp/network) --overwrite",
-    "bindings": "npm run bindings:crowdfund && npm run bindings:abundance"
+    "bindings": "npm run bindings:crowdfund && npm run bindings:abundance",
+    "convert:assets": "node scripts/convert-to-webp.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
@@ -41,6 +42,7 @@
     "eslint": "^8.14.0",
     "eslint-config-next": "^13.3.1",
     "postcss": "^8.5.14",
+    "sharp": "^0.35.2",
     "tailwindcss": "^3.4.19",
     "typescript": "5.1.3"
   },
