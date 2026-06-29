@@ -4,8 +4,8 @@ import Head from 'next/head'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { Navbar } from '../components/organisms'
-import { USDCConverter, FileUpload } from '../components/molecules'
-import type { UploadedFile } from '../components/molecules'
+import { USDCConverter, FileUpload, DeliverableViewer } from '../components/molecules'
+import type { UploadedFile, DeliverableFile } from '../components/molecules'
 import { useUSDCPrice, formatUSD, convertToUSD } from '../hooks/useUSDCPrice'
 
 interface NavItem {
@@ -24,6 +24,34 @@ const NAV_ITEMS: NavItem[] = [
 
 // Placeholder escrow balance in USDC for demo purposes
 const ESCROW_USDC = 0
+
+// Sample deliverable files for demonstration
+const SAMPLE_DELIVERABLES: DeliverableFile[] = [
+  {
+    id: '1',
+    name: 'milestone-1-report.md',
+    size: 15420,
+    type: 'text/markdown',
+    cid: 'QmYjtig7VJQ6XsnUjqqJvj7QaMcCAwtrgNdahSiFofrE7o',
+    uploadedAt: '2024-01-15T10:30:00Z',
+  },
+  {
+    id: '2', 
+    name: 'code-review-findings.pdf',
+    size: 2847392,
+    type: 'application/pdf',
+    cid: 'QmPChd2hVbrJ8bfo2CGIF2jXd3dKXH5grkCxfkeqyqJAyK',
+    uploadedAt: '2024-01-14T16:45:00Z',
+  },
+  {
+    id: '3',
+    name: 'test-results.json',
+    size: 8732,
+    type: 'application/json', 
+    cid: 'QmNLei78zWmzUdbeRB3CiUfAizWUrbeeZh5K1rhAQKCh51',
+    uploadedAt: '2024-01-14T14:20:00Z',
+  },
+]
 
 const Dashboard: NextPage = () => {
   const router = useRouter()
@@ -209,6 +237,24 @@ const Dashboard: NextPage = () => {
                 maxFileSizeBytes={50 * 1024 * 1024}
               />
             </div>
+
+            {/* Submitted Deliverables Viewer */}
+            {SAMPLE_DELIVERABLES.length > 0 && (
+              <div className="mb-8 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6">
+                <div className="mb-4">
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                    Submitted Deliverables
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    View and preview your submitted deliverable files. Markdown files can be previewed with full formatting.
+                  </p>
+                </div>
+                <DeliverableViewer
+                  files={SAMPLE_DELIVERABLES}
+                  onFileSelect={(file) => console.log('Selected file:', file)}
+                />
+              </div>
+            )}
 
             {/* Empty state */}
             <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-12 text-center">

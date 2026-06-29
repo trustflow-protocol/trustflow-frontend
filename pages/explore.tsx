@@ -3,6 +3,7 @@ import type { NextPage } from 'next'
 import Head from 'next/head'
 import Link from 'next/link'
 import { Navbar } from '../components/organisms'
+import { MarkdownRenderer } from '../components/atoms'
 
 interface Gig {
   id: string
@@ -20,7 +21,20 @@ const MOCK_GIGS: Gig[] = [
   {
     id: '1',
     title: 'Smart Contract Audit for DeFi Protocol',
-    description: 'Need experienced Solidity auditor to review our lending protocol smart contracts for security vulnerabilities.',
+    description: `## Project Overview
+Need **experienced Solidity auditor** to review our lending protocol smart contracts for security vulnerabilities.
+
+### Requirements:
+- 3+ years Solidity experience
+- Previous audit experience
+- Knowledge of DeFi protocols
+
+### Deliverables:
+1. **Security Assessment Report**
+2. **Vulnerability Documentation** 
+3. **Remediation Recommendations**
+
+> *Priority focus on reentrancy and overflow attacks*`,
     budget: '5000 XLM',
     milestones: 3,
     category: 'Development',
@@ -31,7 +45,22 @@ const MOCK_GIGS: Gig[] = [
   {
     id: '2',
     title: 'UI/UX Design for NFT Marketplace',
-    description: 'Looking for a talented designer to create modern, user-friendly interface for our NFT marketplace on Stellar.',
+    description: `## Project Scope
+Looking for a **talented designer** to create modern, user-friendly interface for our NFT marketplace on Stellar.
+
+### Design Requirements:
+- Clean, modern aesthetic
+- Mobile-responsive design
+- Dark/light mode support
+- Accessibility compliance (WCAG 2.1)
+
+### Key Features:
+- [ ] User dashboard
+- [ ] NFT collection browsing
+- [ ] Wallet integration UI
+- [ ] Transaction history
+
+*Portfolio review required*`,
     budget: '3000 XLM',
     milestones: 4,
     category: 'Design',
@@ -42,7 +71,22 @@ const MOCK_GIGS: Gig[] = [
   {
     id: '3',
     title: 'Content Writing for Blockchain Blog',
-    description: 'Seeking technical writer to produce 10 high-quality articles about Stellar blockchain and Soroban smart contracts.',
+    description: `## Content Creation Project
+Seeking **technical writer** to produce 10 high-quality articles about Stellar blockchain and Soroban smart contracts.
+
+### Topics Include:
+1. **Stellar Consensus Protocol**
+2. **Soroban Smart Contracts Tutorial**
+3. **DeFi on Stellar**
+4. **Tokenization Best Practices**
+
+### Requirements:
+- Technical blockchain knowledge
+- SEO optimization
+- 1500+ words per article
+- Original research and examples
+
+**Bonus:** Experience with Rust programming`,
     budget: '1500 XLM',
     milestones: 10,
     category: 'Writing',
@@ -174,10 +218,13 @@ const Explore: NextPage = () => {
                     {gig.title}
                   </h3>
 
-                  {/* Description */}
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-3">
-                    {gig.description}
-                  </p>
+                  {/* Description - with markdown preview */}
+                  <div className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-4">
+                    <MarkdownRenderer 
+                      content={gig.description} 
+                      className="prose-sm"
+                    />
+                  </div>
 
                   {/* Budget and details */}
                   <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200 dark:border-gray-800">
