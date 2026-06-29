@@ -1,5 +1,6 @@
 import React, { FunctionComponent } from 'react'
 import { Card, ConnectButton, Loading, ProgressBar } from '../../atoms'
+import { MilestoneProgress, type MilestoneProgressItem } from '../../molecules'
 import { Spacer } from '../../atoms/spacer'
 import { Utils } from '../../../shared/utils'
 import { useAccount } from '../../../hooks'
@@ -21,9 +22,35 @@ const EscrowPanel: FunctionComponent = () => {
     symbol: 'XLM',
     deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     loaded: true,
+    milestones: [
+      {
+        id: 'brief',
+        title: 'Project brief approved',
+        amount: '150 XLM',
+        status: 'released',
+        description: 'Client approved the brief and the first tranche was released.',
+        dueLabel: 'Released after kickoff approval',
+      },
+      {
+        id: 'build',
+        title: 'Implementation review',
+        amount: '500 XLM',
+        status: 'current',
+        description: 'Funds remain locked until the active deliverable is accepted.',
+        dueLabel: 'Current escrow checkpoint',
+      },
+      {
+        id: 'handoff',
+        title: 'Final handoff',
+        amount: '350 XLM',
+        status: 'locked',
+        description: 'Final tranche stays locked until completion is confirmed.',
+        dueLabel: 'Queued after implementation review',
+      },
+    ] satisfies MilestoneProgressItem[],
   }
 
-  const { balance, target, decimals, symbol, deadline, loaded } = mockEscrow
+  const { balance, target, decimals, symbol, deadline, loaded, milestones } = mockEscrow
 
   return (
     <Card>
@@ -40,6 +67,10 @@ const EscrowPanel: FunctionComponent = () => {
           </span>
           <Spacer rem={1} />
           <ProgressBar value={Utils.percentage(balance, target, decimals)} />
+          <MilestoneProgress
+            milestones={milestones}
+            summary="1 tranche released; 2 tranches remain locked in escrow."
+          />
           <Spacer rem={1.5} />
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <div>
