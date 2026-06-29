@@ -3,3 +3,8 @@
   display: flex;
   flex-direction: column;
 }
+
+.projectImage {
+  width: 100%;
+  height: auto;
+}
