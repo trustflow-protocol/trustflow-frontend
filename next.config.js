@@ -13,6 +13,13 @@ const nextConfig = {
     locales: ['en', 'es'],
     defaultLocale: 'en',
   },
+  images: {
+    // Serve WebP (and AVIF where supported) instead of the original format.
+    formats: ['image/avif', 'image/webp'],
+    // Breakpoints used when generating responsive srcsets.
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+  },
 };
 
 setupDevPlatform();

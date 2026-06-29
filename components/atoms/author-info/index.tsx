@@ -11,7 +11,7 @@ export interface AuthorInfoProps {
 export function AuthorInfo({ image, author, dateTime }: AuthorInfoProps) {
   return (
     <div className={styles.content}>
-      <Image src={image} width={36} height={36} alt="avatar" />
+      <Image src={image} width={36} height={36} alt="avatar" sizes="36px" />
       <div className={styles.author}>
         <span>{dateTime}</span>
         <br />
