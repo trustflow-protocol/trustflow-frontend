@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useTranslations } from 'next-intl';
 import { ThemeToggle } from '../../atoms/theme-toggle';
 import { LocaleSwitcher } from '../../atoms/locale-switcher';
+import { ConnectButton } from '../../atoms/connect-button';
+import { WalletButton } from '../../atoms/wallet-button';
+import { useAccount } from '../../../hooks/useAccount';
 
 const NAV_LINKS = [
   { key: 'home',        href: '/'            },
@@ -17,6 +20,13 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const t = useTranslations('Nav');
+  const account = useAccount();
+
+  // useAccount state is driven by Freighter events; clearing it locally is
+  // enough to reflect a disconnect since there is no server-side session.
+  const [disconnected, setDisconnected] = useState(false);
+  const handleDisconnect = useCallback(() => setDisconnected(true), []);
+  const effectiveAccount = disconnected ? null : account;
 
   const toggle = () => setOpen((v) => !v);
   const close  = () => setOpen(false);
@@ -50,12 +60,11 @@ export function Navbar() {
       <div className="hidden md:flex items-center gap-3">
         <LocaleSwitcher />
         <ThemeToggle />
-        <Link
-          href="/escrow"
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-all hover:-translate-y-px"
-        >
-          {t('launchApp')}
-        </Link>
+        {effectiveAccount ? (
+          <WalletButton address={effectiveAccount.address} onDisconnect={handleDisconnect} />
+        ) : (
+          <ConnectButton label={t('connectWallet')} />
+        )}
       </div>
 
       {/* Hamburger */}
@@ -93,13 +102,11 @@ export function Navbar() {
           <div className="mt-3 flex items-center gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
             <LocaleSwitcher />
             <ThemeToggle />
-            <Link
-              href="/escrow"
-              onClick={close}
-              className="flex-1 text-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors"
-            >
-              {t('launchApp')}
-            </Link>
+            {effectiveAccount ? (
+              <WalletButton address={effectiveAccount.address} onDisconnect={handleDisconnect} />
+            ) : (
+              <ConnectButton label={t('connectWallet')} />
+            )}
           </div>
         </div>
       )}
