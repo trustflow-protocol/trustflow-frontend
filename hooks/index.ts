@@ -1,4 +1,6 @@
 export * from "./useAccount";
+export * from "./useDebouncedValue";
+export * from "./useGigsExplorer";
 export * from "./useIsMounted";
 export * from './useSubscription';
 export * from './useUSDCPrice';
