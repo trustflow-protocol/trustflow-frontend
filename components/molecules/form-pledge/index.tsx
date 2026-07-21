@@ -10,7 +10,7 @@ export interface IFormPledgeProps {
   account: string
   decimals: number
   symbol?: string
-  gigId?: Uint8Array
+  gigId?: Buffer
   milestoneIndex?: number
   onPledge: () => void
   updatedAt: number

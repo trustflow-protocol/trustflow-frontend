@@ -23,7 +23,7 @@ const TYPE_MAP = {
   I32: 'number',
   I128: 'bigint',
   String: 'string',
-  Bytes: 'Uint8Array',
+  Bytes: 'Buffer',
   Address: 'string',
 }
 
@@ -32,10 +32,8 @@ function mapType(typeDef, localTypes) {
 
   const raw = typeDef.type
 
-  // Check if it's a native Soroban type
   if (TYPE_MAP[raw]) return TYPE_MAP[raw]
 
-  // Check for generic types: Vec<T>, Option<T>, Map<K,V>
   const vecMatch = raw.match(/^Vec<(.+)>$/)
   if (vecMatch) {
     return `${mapType({ type: vecMatch[1] }, localTypes)}[]`
@@ -48,10 +46,9 @@ function mapType(typeDef, localTypes) {
 
   const bytesNMatch = raw.match(/^BytesN<(\d+)>$/)
   if (bytesNMatch) {
-    return 'Uint8Array'
+    return 'Buffer'
   }
 
-  // Check if it's a local custom type
   if (localTypes && localTypes[raw]) {
     return raw
   }
@@ -61,8 +58,7 @@ function mapType(typeDef, localTypes) {
 
 function generateTypeInterface(name, typeDef, localTypes) {
   if (typeDef.variants) {
-    // Generate an enum/union type
-    const variants = typeDef.variants.map(v => `  ${v}`).join(' |\n')
+    const variants = typeDef.variants.map(v => `  '${v}'`).join(' |\n')
     return `export type ${name} =\n${variants}\n`
   }
 
@@ -107,7 +103,7 @@ function generateBindings(spec) {
   lines.push(` * Auto-generated ${contractName} contract bindings`)
   lines.push(` * Generated from Soroban contract spec — do not edit manually`)
   lines.push(` */`)
-  lines.push(`import { Contract, rpc, xdr, Address } from '@stellar/stellar-sdk'`)
+  lines.push(`import { Contract, rpc, xdr, TransactionBuilder, Networks } from '@stellar/stellar-sdk'`)
   lines.push(`import { getSorobanServer } from '../soroban-rpc'`)
   lines.push(`import { ${spec.contract.toUpperCase()}_CONTRACT_ID } from '../contracts'`)
   lines.push(``)
@@ -149,15 +145,24 @@ function generateBindings(spec) {
   lines.push(`  const contract = new Contract(contractId)`)
   lines.push(``)
   lines.push(`  async function invoke<T>(method: string, ...args: xdr.ScVal[]): Promise<T> {`)
-  lines.push(`    const tx = await server.simulateTransaction(contract.call(method, ...args))`)
-  lines.push(`    const result = rpc.assembleTransaction(contract.call(method, ...args), tx).toXDR()`)
-  lines.push(`    const sendResponse = await server.sendTransaction(result)`)
+  lines.push(`    const sourceAccount = await server.getAccount(contractId)`)
+  lines.push(`    const builtTx = new TransactionBuilder(sourceAccount, {`)
+  lines.push(`      fee: '100',`)
+  lines.push(`      networkPassphrase: Networks.TESTNET,`)
+  lines.push(`    })`)
+  lines.push(`      .addOperation(contract.call(method, ...args))`)
+  lines.push(`      .setTimeout(30)`)
+  lines.push(`      .build()`)
+  lines.push(`    const simulation = await server.simulateTransaction(builtTx)`)
+  lines.push(`    const assembledTx = rpc.assembleTransaction(builtTx, simulation)`)
+  lines.push(`    const sendResponse = await server.sendTransaction(assembledTx.build())`)
   lines.push(`    const resultResponse = await server.getTransaction(sendResponse.hash)`)
   lines.push(`    if (resultResponse.status !== 'SUCCESS') {`)
   lines.push(`      throw new Error(\`Transaction failed: \${resultResponse.status}\`)`)
   lines.push(`    }`)
-  lines.push(`    const returnValue = contract.call(method, ...args).result?.val`)
-  lines.push(`    return rpc.scValToNative(returnValue as xdr.ScVal) as T`)
+  lines.push(`    const retval = (resultResponse as any).result?.retval`)
+  lines.push(`    if (!retval) return undefined as T`)
+  lines.push(`    return retval as T`)
   lines.push(`  }`)
   lines.push(``)
   lines.push(`  return {`)
@@ -173,13 +178,13 @@ function generateBindings(spec) {
 
     const scVals = Object.entries(methodDef.args || {})
       .map(([name, def]) => {
-        if (def.type === 'Address') return `new Address(${name}).toScVal()`
+        if (def.type === 'Address') return `xdr.ScVal.scvString(${name})`
         if (def.type === 'I128') return `xdr.ScVal.scvI128(new xdr.Int128Parts({ hi: xdr.Int64.fromString(String(BigInt(${name}) >> 64n)), lo: xdr.Int64.fromString(String(BigInt(${name}) & 0xFFFFFFFFFFFFFFFFn)) }))`
         if (def.type === 'U32') return `xdr.ScVal.scvU32(${name})`
         if (def.type === 'U64') return `xdr.ScVal.scvU64(xdr.Int64.fromString(String(${name})))`
         if (def.type === 'Bool') return `xdr.ScVal.scvBool(${name})`
         if (def.type === 'String') return `xdr.ScVal.scvString(${name})`
-        if (def.type === 'BytesN<32>') return `xdr.ScVal.scvBytes(Uint8Array.from(${name}))`
+        if (def.type === 'BytesN<32>') return `xdr.ScVal.scvBytes(${name})`
         return `xdr.ScVal.scvBytes(${name})`
       })
       .join(', ')
@@ -210,7 +215,6 @@ function main() {
     process.exit(1)
   }
 
-  // Ensure output directory exists
   if (!fs.existsSync(OUTPUT_DIR)) {
     fs.mkdirSync(OUTPUT_DIR, { recursive: true })
   }
@@ -225,7 +229,6 @@ function main() {
   for (const specFile of specFiles) {
     const specPath = path.join(SPECS_DIR, specFile)
     const spec = JSON.parse(fs.readFileSync(specPath, 'utf-8'))
-    const contractName = spec.contract.charAt(0).toUpperCase() + spec.contract.slice(1)
 
     const output = generateBindings(spec)
     const outputPath = path.join(OUTPUT_DIR, `${spec.contract}.ts`)
@@ -235,7 +238,6 @@ function main() {
     indexLines.push(`export * from './${spec.contract}'`)
   }
 
-  // Generate barrel export
   const indexPath = path.join(OUTPUT_DIR, 'index.ts')
   fs.writeFileSync(indexPath, indexLines.join('\n'), 'utf-8')
   console.log(`Generated: ${indexPath}`)

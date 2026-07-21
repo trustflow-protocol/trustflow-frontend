@@ -10,11 +10,11 @@ import { DISPUTE_CONTRACT_ID } from '../shared/contracts'
 export type { Dispute, DisputeOutcome, DisputeStatus }
 
 interface UseDisputeContractResult {
-  openDispute: (gigId: Uint8Array, milestoneIndex: number, reason: string) => Promise<void>
-  submitEvidence: (disputeId: Uint8Array, evidenceUri: string) => Promise<void>
-  vote: (disputeId: Uint8Array, inFavor: boolean) => Promise<void>
-  resolve: (disputeId: Uint8Array) => Promise<DisputeOutcome>
-  getDispute: (disputeId: Uint8Array) => Promise<Dispute>
+  openDispute: (gigId: Buffer, milestoneIndex: number, reason: string) => Promise<void>
+  submitEvidence: (disputeId: Buffer, evidenceUri: string) => Promise<void>
+  vote: (disputeId: Buffer, inFavor: boolean) => Promise<void>
+  resolve: (disputeId: Buffer) => Promise<DisputeOutcome>
+  getDispute: (disputeId: Buffer) => Promise<Dispute>
   isReady: boolean
   error: string | null
   clearError: () => void
@@ -46,7 +46,7 @@ export function useDisputeContract(): UseDisputeContractResult {
   )
 
   const openDispute = useCallback(
-    (gigId: Uint8Array, milestoneIndex: number, reason: string) => {
+    (gigId: Buffer, milestoneIndex: number, reason: string) => {
       if (!contract) throw new Error('Dispute contract not configured')
       return withErrorHandling(() => contract.open_dispute(gigId, milestoneIndex, reason))
     },
@@ -54,7 +54,7 @@ export function useDisputeContract(): UseDisputeContractResult {
   )
 
   const submitEvidence = useCallback(
-    (disputeId: Uint8Array, evidenceUri: string) => {
+    (disputeId: Buffer, evidenceUri: string) => {
       if (!contract) throw new Error('Dispute contract not configured')
       return withErrorHandling(() => contract.submit_evidence(disputeId, evidenceUri))
     },
@@ -62,7 +62,7 @@ export function useDisputeContract(): UseDisputeContractResult {
   )
 
   const vote = useCallback(
-    (disputeId: Uint8Array, inFavor: boolean) => {
+    (disputeId: Buffer, inFavor: boolean) => {
       if (!contract) throw new Error('Dispute contract not configured')
       return withErrorHandling(() => contract.vote(disputeId, inFavor))
     },
@@ -70,7 +70,7 @@ export function useDisputeContract(): UseDisputeContractResult {
   )
 
   const resolve = useCallback(
-    (disputeId: Uint8Array) => {
+    (disputeId: Buffer) => {
       if (!contract) throw new Error('Dispute contract not configured')
       return withErrorHandling(() => contract.resolve(disputeId))
     },
@@ -78,7 +78,7 @@ export function useDisputeContract(): UseDisputeContractResult {
   )
 
   const getDispute = useCallback(
-    (disputeId: Uint8Array) => {
+    (disputeId: Buffer) => {
       if (!contract) throw new Error('Dispute contract not configured')
       return withErrorHandling(() => contract.get_dispute(disputeId))
     },

@@ -9,11 +9,11 @@ import { ESCROW_CONTRACT_ID } from '../shared/contracts'
 export type { Milestone, MilestoneStatus }
 
 interface UseEscrowContractResult {
-  deposit: (gigId: Uint8Array, milestoneIndex: number, token: string, amount: bigint) => Promise<void>
-  release: (gigId: Uint8Array, milestoneIndex: number) => Promise<void>
-  refund: (gigId: Uint8Array, milestoneIndex: number) => Promise<void>
-  getBalance: (gigId: Uint8Array, milestoneIndex: number) => Promise<bigint>
-  getMilestones: (gigId: Uint8Array) => Promise<Milestone[]>
+  deposit: (gigId: Buffer, milestoneIndex: number, token: string, amount: bigint) => Promise<void>
+  release: (gigId: Buffer, milestoneIndex: number) => Promise<void>
+  refund: (gigId: Buffer, milestoneIndex: number) => Promise<void>
+  getBalance: (gigId: Buffer, milestoneIndex: number) => Promise<bigint>
+  getMilestones: (gigId: Buffer) => Promise<Milestone[]>
   isReady: boolean
   error: string | null
   clearError: () => void
@@ -45,7 +45,7 @@ export function useEscrowContract(): UseEscrowContractResult {
   )
 
   const deposit = useCallback(
-    (gigId: Uint8Array, milestoneIndex: number, token: string, amount: bigint) => {
+    (gigId: Buffer, milestoneIndex: number, token: string, amount: bigint) => {
       if (!contract) throw new Error('Escrow contract not configured')
       return withErrorHandling(() => contract.deposit(gigId, milestoneIndex, token, amount))
     },
@@ -53,7 +53,7 @@ export function useEscrowContract(): UseEscrowContractResult {
   )
 
   const release = useCallback(
-    (gigId: Uint8Array, milestoneIndex: number) => {
+    (gigId: Buffer, milestoneIndex: number) => {
       if (!contract) throw new Error('Escrow contract not configured')
       return withErrorHandling(() => contract.release(gigId, milestoneIndex))
     },
@@ -61,7 +61,7 @@ export function useEscrowContract(): UseEscrowContractResult {
   )
 
   const refund = useCallback(
-    (gigId: Uint8Array, milestoneIndex: number) => {
+    (gigId: Buffer, milestoneIndex: number) => {
       if (!contract) throw new Error('Escrow contract not configured')
       return withErrorHandling(() => contract.refund(gigId, milestoneIndex))
     },
@@ -69,7 +69,7 @@ export function useEscrowContract(): UseEscrowContractResult {
   )
 
   const getBalance = useCallback(
-    (gigId: Uint8Array, milestoneIndex: number) => {
+    (gigId: Buffer, milestoneIndex: number) => {
       if (!contract) throw new Error('Escrow contract not configured')
       return withErrorHandling(() => contract.get_balance(gigId, milestoneIndex))
     },
@@ -77,7 +77,7 @@ export function useEscrowContract(): UseEscrowContractResult {
   )
 
   const getMilestones = useCallback(
-    (gigId: Uint8Array) => {
+    (gigId: Buffer) => {
       if (!contract) throw new Error('Escrow contract not configured')
       return withErrorHandling(() => contract.get_gig_milestones(gigId))
     },

@@ -6,7 +6,7 @@ import { useEscrowContract } from '../../../hooks'
 export interface IDepositsProps {
   address: string
   decimals: number
-  gigId?: Uint8Array
+  gigId?: Buffer
   milestoneIndex?: number
   name?: string
   symbol?: string

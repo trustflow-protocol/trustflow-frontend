@@ -9,26 +9,18 @@ function eventTitle(event: ContractEvent): string {
 }
 
 function formatEventData(event: ContractEvent): string {
-  if (event.source === 'escrow' && event.data) {
-    const data = event.data as EscrowEvent[keyof EscrowEvent]
-    if ('amount' in data) {
-      return `${data.amount} tokens`
-    }
-    if ('freelancer' in data) {
-      return `to ${data.freelancer}`
-    }
+  if (!event.data || typeof event.data !== 'object') return ''
+
+  const data = event.data as Record<string, unknown>
+
+  if (event.source === 'escrow') {
+    if ('amount' in data) return `${data.amount} tokens`
+    if ('freelancer' in data) return `to ${data.freelancer}`
   }
-  if (event.source === 'dispute' && event.data) {
-    const data = event.data as DisputeEvent[keyof DisputeEvent]
-    if ('reason' in data) {
-      return data.reason
-    }
-    if ('evidence_uri' in data) {
-      return data.evidence_uri
-    }
-    if ('outcome' in data) {
-      return data.outcome
-    }
+  if (event.source === 'dispute') {
+    if ('reason' in data) return String(data.reason)
+    if ('evidence_uri' in data) return String(data.evidence_uri)
+    if ('outcome' in data) return String(data.outcome)
   }
   return ''
 }
