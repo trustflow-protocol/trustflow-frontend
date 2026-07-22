@@ -87,6 +87,13 @@ function generateMethod(name, methodDef, localTypes) {
   return `${jsDoc}  ${name}(${args}): Promise<${resultType}>`
 }
 
+function toPascalCase(str) {
+  return str
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join('')
+}
+
 function generateEventDataType(name, dataDef, localTypes) {
   if (!dataDef || Object.keys(dataDef).length === 0) return 'void'
   const fields = Object.entries(dataDef)
@@ -121,7 +128,8 @@ function generateBindings(spec) {
     lines.push(``)
     for (const [eventName, eventDef] of Object.entries(spec.events)) {
       const dataType = generateEventDataType(eventName, eventDef.data, spec.types)
-      lines.push(`export interface ${contractName}${eventName.charAt(0).toUpperCase() + eventName.slice(1)}EventData ${dataType}`)
+      const eventTypeName = `${contractName}${toPascalCase(eventName)}EventData`
+      lines.push(`export interface ${eventTypeName} ${dataType}`)
       lines.push(``)
     }
   }
@@ -207,7 +215,58 @@ function generateBindings(spec) {
   return lines.join('\n')
 }
 
+function validateSpec(specPath) {
+  const spec = JSON.parse(fs.readFileSync(specPath, 'utf-8'))
+  const errors = []
+
+  if (!spec.contract || typeof spec.contract !== 'string') {
+    errors.push('Missing or invalid "contract" field (must be a string)')
+  }
+
+  if (!spec.methods || typeof spec.methods !== 'object') {
+    errors.push('Missing or invalid "methods" field (must be an object)')
+  } else {
+    for (const [methodName, methodDef] of Object.entries(spec.methods)) {
+      if (!methodDef.args || typeof methodDef.args !== 'object') {
+        errors.push(`Method "${methodName}": missing or invalid "args" field`)
+      }
+      if (methodDef.result && typeof methodDef.result !== 'object') {
+        errors.push(`Method "${methodName}": invalid "result" field`)
+      }
+    }
+  }
+
+  if (spec.types && typeof spec.types !== 'object') {
+    errors.push('Invalid "types" field (must be an object)')
+  }
+
+  if (spec.events && typeof spec.events !== 'object') {
+    errors.push('Invalid "events" field (must be an object)')
+  }
+
+  return errors
+}
+
+function generateBindingsForValidation(spec) {
+  const output = generateBindings(spec)
+  const outputPath = path.join(OUTPUT_DIR, `${spec.contract}.ts`)
+
+  if (!fs.existsSync(outputPath)) {
+    return { changed: true, reason: 'file does not exist' }
+  }
+
+  const existing = fs.readFileSync(outputPath, 'utf-8')
+  if (existing !== output) {
+    return { changed: true, reason: 'bindings are out of date' }
+  }
+
+  return { changed: false }
+}
+
 function main() {
+  const args = process.argv.slice(2)
+  const isValidate = args.includes('--validate')
+
   const specFiles = fs.readdirSync(SPECS_DIR).filter(f => f.endsWith('.spec.json'))
 
   if (specFiles.length === 0) {
@@ -215,6 +274,44 @@ function main() {
     process.exit(1)
   }
 
+  // Validate spec files first
+  let hasValidationErrors = false
+  for (const specFile of specFiles) {
+    const specPath = path.join(SPECS_DIR, specFile)
+    const errors = validateSpec(specPath)
+    if (errors.length > 0) {
+      console.error(`Validation errors in ${specFile}:`)
+      errors.forEach(err => console.error(`  - ${err}`))
+      hasValidationErrors = true
+    }
+  }
+  if (hasValidationErrors) {
+    process.exit(1)
+  }
+
+  if (isValidate) {
+    // Validation mode: check if generated bindings are up-to-date
+    let outOfDate = false
+    for (const specFile of specFiles) {
+      const specPath = path.join(SPECS_DIR, specFile)
+      const spec = JSON.parse(fs.readFileSync(specPath, 'utf-8'))
+      const result = generateBindingsForValidation(spec)
+      if (result.changed) {
+        console.error(`Bindings for "${spec.contract}" are out of date: ${result.reason}`)
+        outOfDate = true
+      }
+    }
+
+    if (outOfDate) {
+      console.error('\nRun "npm run codegen" to regenerate bindings.')
+      process.exit(1)
+    }
+
+    console.log(`All ${specFiles.length} contract binding(s) are up-to-date.`)
+    return
+  }
+
+  // Generation mode
   if (!fs.existsSync(OUTPUT_DIR)) {
     fs.mkdirSync(OUTPUT_DIR, { recursive: true })
   }
