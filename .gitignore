@@ -47,6 +47,6 @@ yarn-error.log*
 *.sublime-workspace
 
 # Local scripts output
-
 # Auto-generated contract bindings (regenerated via npm run codegen)
 /shared/contracts-gen
+fix.md
