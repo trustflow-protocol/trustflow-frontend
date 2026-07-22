@@ -1,26 +1,61 @@
-import { Address, BASE_FEE, Contract, TransactionBuilder, nativeToScVal, rpc } from '@stellar/stellar-sdk'
+import { Address, BASE_FEE, Contract, StrKey, TransactionBuilder, nativeToScVal, scValToNative, rpc } from '@stellar/stellar-sdk'
 import { getSorobanServer } from './soroban-rpc'
 import { ESCROW_CONTRACT_ID, NETWORK_PASSPHRASE } from './contracts'
 
 const STROOPS_PER_XLM = 10_000_000
 
+/**
+ * Maps the `TrustFlowError` enum from the on-chain contract
+ * (trustflow-protocol/trustflow-contract, contracts/trustflow/src/lib.rs)
+ * to a human-readable message. Soroban surfaces contract errors as strings
+ * like "... Error(Contract, #3) ..." in RPC/simulation failures.
+ */
+const CONTRACT_ERROR_MESSAGES: Record<number, string> = {
+  1: 'Unauthorized: the connected wallet is not allowed to perform this action',
+  2: 'Escrow not found',
+  3: 'Invalid amount: every milestone amount must be greater than zero',
+  4: 'Dispute not found',
+  5: 'This dispute has already been resolved',
+  6: 'The escrow is not in a valid state for this action',
+  7: 'This juror has already voted on this dispute',
+  8: 'Insufficient staked balance',
+  9: 'No votes have been cast on this dispute',
+  10: 'Milestone amounts do not match the escrow total',
+}
+
+function describeContractError(message: string): string {
+  const match = message.match(/Error\(Contract,\s*#(\d+)\)/)
+  if (match) {
+    const code = Number(match[1])
+    return CONTRACT_ERROR_MESSAGES[code] ?? message
+  }
+  return message
+}
+
 function xlmToStroops(amount: string): bigint {
   return BigInt(Math.round(Number(amount) * STROOPS_PER_XLM))
 }
 
+export function isValidStellarAddress(address: string): boolean {
+  return StrKey.isValidEd25519PublicKey(address)
+}
+
 export interface EscrowMilestoneInput {
-  title: string
+  label: string
   amount: string
-  duration: string
 }
 
 export interface CreateGigEscrowInput {
-  creator: string
-  title: string
-  description: string
-  category: string
-  totalBudget: string
+  /** The gig poster's wallet address; funds are drawn from this account. */
+  depositor: string
+  /** The freelancer's wallet address; receives the escrowed funds on release/settlement. */
+  beneficiary: string
   milestones: EscrowMilestoneInput[]
+}
+
+export interface CreateGigEscrowResult {
+  escrowId: string
+  txHash: string
 }
 
 /**
@@ -30,41 +65,60 @@ export interface CreateGigEscrowInput {
  */
 export type SignTransaction = (xdr: string) => Promise<string>
 
+function milestoneToScVal(milestone: EscrowMilestoneInput) {
+  return nativeToScVal(
+    {
+      label: milestone.label,
+      amount: xlmToStroops(milestone.amount),
+      approved: false,
+    },
+    {
+      type: {
+        label: ['symbol', 'string'],
+        amount: ['symbol', 'i128'],
+        approved: ['symbol', null],
+      },
+    }
+  )
+}
+
 /**
- * Builds a `create_gig` invocation on the escrow contract, signs it via the
- * caller-supplied `signTransaction`, submits it to Soroban RPC, and polls
- * until it lands on-chain. Returns the transaction hash on success.
+ * Builds an `init_escrow` invocation on the TrustFlow contract, signs it via
+ * the caller-supplied `signTransaction`, submits it to Soroban RPC, and
+ * polls until it lands on-chain. Returns the new escrow ID and tx hash.
  *
- * There's no generated contract client for the escrow contract (its Rust
- * source isn't part of this frontend repo), so the invocation is built by
- * hand against `shared/soroban-rpc.ts`'s shared RPC client.
+ * There's no generated TypeScript client for the contract yet, so the
+ * invocation is built by hand against the ABI in
+ * trustflow-protocol/trustflow-contract (contracts/trustflow/src/lib.rs):
+ *
+ *   fn init_escrow(depositor: Address, beneficiary: Address, milestones: Vec<Milestone>) -> Result<u64, TrustFlowError>
+ *   struct Milestone { label: String, amount: i128, approved: bool }
+ *
+ * The contract locks `sum(milestones[].amount)` of its configured token from
+ * `depositor` and requires `beneficiary` up front (there's no on-chain
+ * method to change it later), so this must be called with the chosen
+ * freelancer's address already known.
  */
 export async function createGigEscrow(
   input: CreateGigEscrowInput,
   signTransaction: SignTransaction
-): Promise<string> {
+): Promise<CreateGigEscrowResult> {
   if (!ESCROW_CONTRACT_ID) {
     throw new Error('Escrow contract is not configured (set NEXT_PUBLIC_ESCROW_CONTRACT_ID)')
   }
+  if (input.milestones.length === 0) {
+    throw new Error('At least one milestone is required')
+  }
 
   const server = getSorobanServer()
-  const sourceAccount = await server.getAccount(input.creator)
+  const sourceAccount = await server.getAccount(input.depositor)
   const contract = new Contract(ESCROW_CONTRACT_ID)
 
   const operation = contract.call(
-    'create_gig',
-    Address.fromString(input.creator).toScVal(),
-    nativeToScVal(input.title, { type: 'string' }),
-    nativeToScVal(input.description, { type: 'string' }),
-    nativeToScVal(input.category, { type: 'string' }),
-    nativeToScVal(xlmToStroops(input.totalBudget), { type: 'i128' }),
-    nativeToScVal(
-      input.milestones.map((milestone) => ({
-        title: milestone.title,
-        amount: xlmToStroops(milestone.amount),
-        duration: milestone.duration,
-      }))
-    )
+    'init_escrow',
+    Address.fromString(input.depositor).toScVal(),
+    Address.fromString(input.beneficiary).toScVal(),
+    nativeToScVal(input.milestones.map(milestoneToScVal))
   )
 
   const transaction = new TransactionBuilder(sourceAccount, {
@@ -75,13 +129,20 @@ export async function createGigEscrow(
     .setTimeout(30)
     .build()
 
-  const preparedTransaction = await server.prepareTransaction(transaction)
+  let preparedTransaction
+  try {
+    preparedTransaction = await server.prepareTransaction(transaction)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    throw new Error(describeContractError(message))
+  }
+
   const signedXdr = await signTransaction(preparedTransaction.toXDR())
   const signedTransaction = TransactionBuilder.fromXDR(signedXdr, NETWORK_PASSPHRASE)
 
   const sendResult = await server.sendTransaction(signedTransaction)
   if (sendResult.status === 'ERROR' || sendResult.status === 'DUPLICATE') {
-    throw new Error(`Failed to submit transaction (status: ${sendResult.status})`)
+    throw new Error(describeContractError(`Failed to submit transaction (status: ${sendResult.status})`))
   }
 
   return waitForTransaction(server, sendResult.hash)
@@ -92,12 +153,13 @@ async function waitForTransaction(
   hash: string,
   attempts = 15,
   intervalMs = 1500
-): Promise<string> {
+): Promise<CreateGigEscrowResult> {
   for (let attempt = 0; attempt < attempts; attempt++) {
     const result = await server.getTransaction(hash)
 
     if (result.status === rpc.Api.GetTransactionStatus.SUCCESS) {
-      return hash
+      const escrowId = result.returnValue ? String(scValToNative(result.returnValue)) : ''
+      return { escrowId, txHash: hash }
     }
 
     if (result.status === rpc.Api.GetTransactionStatus.FAILED) {
