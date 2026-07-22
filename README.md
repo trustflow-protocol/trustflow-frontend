@@ -44,6 +44,7 @@ TrustFlow Frontend is the Next.js web application that gives users a seamless in
 - **`/`** - Landing page with feature showcase
 - **`/dashboard`** - User dashboard (My Gigs)
 - **`/dashboard/disputes`** - Active disputes
+- **`/dashboard/contracts`** - Contract bindings status and interaction
 - **`/dashboard/profile`** - User profile and reputation
 - **`/dashboard/settings`** - Account settings
 - **`/explore`** - Browse available gigs
@@ -193,12 +194,24 @@ TrustFlow uses a codegen pipeline to generate fully typed TypeScript client bind
 1. Contract specs are defined as JSON files in `shared/contracts-raw/`
 2. Running `npm run codegen` generates TypeScript bindings in `shared/contracts-gen/`
 3. The `npm run build` and `npm run dev` commands automatically run codegen
+4. CI validates bindings are up-to-date via `npm run codegen:validate`
+5. View contract status and interact with contracts at `/dashboard/contracts`
 
 **Adding a new contract:**
 
 1. Create a spec file: `shared/contracts-raw/mycontract.spec.json`
 2. Run `npm run codegen`
 3. Import the generated client: `import { createMycontractContract } from '../shared/contracts-gen'`
+
+**Validating bindings:**
+
+```bash
+# Check if bindings are up-to-date
+npm run codegen:validate
+
+# Regenerate bindings
+npm run codegen
+```
 
 **Generated files:**
 
