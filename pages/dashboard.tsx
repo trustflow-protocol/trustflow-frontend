@@ -17,6 +17,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: 'My Gigs', href: '/dashboard', icon: '💼', description: 'View and manage your active gigs' },
   { label: 'Disputes', href: '/dashboard/disputes', icon: '⚖️', description: 'Active dispute resolutions' },
+  { label: 'Contracts', href: '/dashboard/contracts', icon: '🔗', description: 'Contract bindings and interaction' },
   { label: 'Profile', href: '/dashboard/profile', icon: '👤', description: 'Your reputation and work history' },
   { label: 'Settings', href: '/dashboard/settings', icon: '⚙️', description: 'Account and preferences' },
 ]
