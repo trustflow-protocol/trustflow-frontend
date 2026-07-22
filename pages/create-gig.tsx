@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import type { NextPage } from 'next'
 import Head from 'next/head'
+import { useRouter } from 'next/router'
 import { Navbar } from '../components/organisms'
 import { useGlobalToast } from './_app'
+import { useWallet } from '../hooks'
+import { createGigEscrow } from '../shared/escrow-contract'
 
 interface Milestone {
   id: string
@@ -34,7 +37,10 @@ const CreateGig: NextPage = () => {
     milestones: [{ id: '1', title: '', description: '', amount: '', duration: '' }],
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const toast = useGlobalToast()
+  const router = useRouter()
+  const { account, signTransaction } = useWallet()
 
   const addMilestone = () => {
     setFormData({
@@ -98,11 +104,39 @@ const CreateGig: NextPage = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 0))
   }
 
-  const handleSubmit = () => {
-    if (validateStep()) {
-      toast.success('Gig created successfully!')
-      console.log('Gig data:', formData)
-      // Here you would integrate with smart contract
+  const handleSubmit = async () => {
+    if (!validateStep()) return
+
+    if (!account) {
+      toast.error('Connect your Stellar wallet before creating a gig')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      await createGigEscrow(
+        {
+          creator: account.address,
+          title: formData.title,
+          description: formData.description,
+          category: formData.category,
+          totalBudget: formData.totalBudget,
+          milestones: formData.milestones.map((m) => ({
+            title: m.title,
+            amount: m.amount,
+            duration: m.duration,
+          })),
+        },
+        signTransaction
+      )
+
+      toast.success('Gig created and escrow funded successfully!')
+      router.push('/dashboard')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create gig escrow'
+      toast.error(message)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -422,9 +456,10 @@ const CreateGig: NextPage = () => {
               ) : (
                 <button
                   onClick={handleSubmit}
-                  className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors"
+                  disabled={isSubmitting}
+                  className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Create Gig
+                  {isSubmitting ? 'Creating Escrow…' : 'Create Gig'}
                 </button>
               )}
             </div>
