@@ -34,23 +34,23 @@ export type DisputeOutcome =
 
 // ── Event Data Types ───────────────────────────────────────────
 
-export interface DisputeDisputeOpenedEventData {
+export interface DisputeDispute_openedEventData {
   dispute_id: Buffer
   opener: string
   reason: string
 }
 
-export interface DisputeEvidenceSubmittedEventData {
+export interface DisputeEvidence_submittedEventData {
   submitter: string
   evidence_uri: string
 }
 
-export interface DisputeVoteCastEventData {
+export interface DisputeVote_castEventData {
   voter: string
   in_favor: boolean
 }
 
-export interface DisputeDisputeResolvedEventData {
+export interface DisputeDispute_resolvedEventData {
   outcome: DisputeOutcome
   votes_for: number
   votes_against: number
