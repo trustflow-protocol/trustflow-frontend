@@ -17,6 +17,7 @@
     "bindings:abundance": "./target/bin/soroban contract bindings typescript --wasm ./target/wasm32-unknown-unknown/release/abundance_token.wasm --id $(cat ./.soroban-example-dapp/abundance_token_id) --output-dir ./.soroban-example-dapp/abundance-token --network $(cat ./.soroban-example-dapp/network) --overwrite",
     "bindings": "npm run bindings:crowdfund && npm run bindings:abundance",
     "codegen": "node scripts/generate-contract-bindings.js",
+    "codegen:validate": "npm run codegen && git diff --exit-code shared/contracts-gen/",
     "convert:assets": "node scripts/convert-to-webp.js"
   },
   "dependencies": {
