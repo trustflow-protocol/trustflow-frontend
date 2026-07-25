@@ -191,13 +191,12 @@ function getMockDispute(id: string): Dispute | null {
 
 export default async function handler(
   req: NextRequest,
-  { params }: { params: { id: string } },
 ): Promise<NextResponse> {
   if (req.method !== 'GET') {
     return NextResponse.json({ error: 'Method not allowed' }, { status: 405 })
   }
 
-  const { id } = params
+  const id = req.nextUrl.pathname.split('/').pop() ?? ''
   const cacheHeaders = { 'Cache-Control': 's-maxage=30, stale-while-revalidate=120' }
   const backendBaseUrl = process.env.DISPUTE_API_BASE_URL
 

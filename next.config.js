@@ -1,6 +1,12 @@
-const { setupDevPlatform } = process.env.NODE_ENV === 'development'
-  ? require('@cloudflare/next-on-pages/next-dev')
-  : { setupDevPlatform: () => {} };
+let setupDevPlatform = () => {}
+if (process.env.NODE_ENV === 'development') {
+  try {
+    const mod = require('@cloudflare/next-on-pages/next-dev')
+    setupDevPlatform = mod.setupDevPlatform
+  } catch {
+    // Cloudflare dev platform not available — dev server works without it.
+  }
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
