@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { TransactionModal } from '../transaction-modal'
 import { useVoting } from '../../../hooks'
 import type { VoteOption } from '../../../shared/types/dispute'
@@ -33,6 +33,25 @@ export function JurorVotePanel({ disputeId, hasVoted, currentVote, onVoteSubmitt
   const [hasReviewed, setHasReviewed] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const { submitStatus, submitError, submitVote, reset } = useVoting()
+  const autoCloseRef = useRef<ReturnType<typeof setTimeout>>()
+
+  const handleCloseModal = useCallback(() => {
+    if (autoCloseRef.current) clearTimeout(autoCloseRef.current)
+    setShowConfirmModal(false)
+    reset()
+    onVoteSubmitted?.()
+  }, [reset, onVoteSubmitted])
+
+  useEffect(() => {
+    if (submitStatus === 'success') {
+      autoCloseRef.current = setTimeout(() => {
+        handleCloseModal()
+      }, 4000)
+    }
+    return () => {
+      if (autoCloseRef.current) clearTimeout(autoCloseRef.current)
+    }
+  }, [submitStatus, handleCloseModal])
 
   const canSubmit = selectedOption !== null && hasReviewed && submitStatus !== 'submitting'
 
@@ -40,16 +59,7 @@ export function JurorVotePanel({ disputeId, hasVoted, currentVote, onVoteSubmitt
     if (!selectedOption) return
 
     setShowConfirmModal(true)
-    const success = await submitVote(disputeId, selectedOption)
-
-    if (success) {
-      onVoteSubmitted?.()
-    }
-  }
-
-  const handleCloseModal = () => {
-    setShowConfirmModal(false)
-    reset()
+    await submitVote(disputeId, selectedOption)
   }
 
   if (hasVoted) {

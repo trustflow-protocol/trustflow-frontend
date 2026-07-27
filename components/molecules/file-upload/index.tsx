@@ -80,7 +80,14 @@ async function uploadToIpfs(
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
           const data = JSON.parse(xhr.responseText)
-          resolve({ cid: data.cid })
+          const cid: string = data.cid
+          const isValidV0 = /^Qm[1-9A-HJ-NP-Za-km-z]{44}$/.test(cid)
+          const isValidV1 = /^baf[0-9A-Za-z]{57,}$/.test(cid)
+          if (!isValidV0 && !isValidV1) {
+            reject(new Error(`Invalid IPFS CID returned from server: ${cid}`))
+            return
+          }
+          resolve({ cid })
         } catch {
           reject(new Error('Invalid response from server'))
         }

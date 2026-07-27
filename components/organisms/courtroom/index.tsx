@@ -1,8 +1,11 @@
 import type { Dispute, DisputeStatus } from '../../../shared/types/dispute'
 import { EvidenceViewer, EvidenceSubmission, JurorVotePanel, VoteTally } from '../../molecules'
+import { ErrorBoundary } from '../../atoms'
+import { useWallet } from '../../../hooks'
 
 interface CourtroomProps {
   dispute: Dispute
+  refetch?: () => Promise<void>
 }
 
 const STATUS_LABELS: Record<DisputeStatus, string> = {
@@ -71,7 +74,11 @@ function PartyCard({
   )
 }
 
-export function Courtroom({ dispute }: CourtroomProps) {
+export function Courtroom({ dispute, refetch }: CourtroomProps) {
+  const { account } = useWallet()
+  const currentJuror = dispute.jurors.find(j => j.walletAddress === account?.address)
+  const hasVoted = currentJuror?.status === 'voted'
+  const currentVote = currentJuror?.vote
   const votedJurors = dispute.jurors.filter(j => j.status === 'voted')
   const selectedJurors = dispute.jurors.filter(j => j.status === 'selected')
 
@@ -119,7 +126,9 @@ export function Courtroom({ dispute }: CourtroomProps) {
       </div>
 
       <Section title={`Evidence (${dispute.evidence.length})`}>
-        <EvidenceViewer evidence={dispute.evidence} />
+        <ErrorBoundary>
+          <EvidenceViewer evidence={dispute.evidence} />
+        </ErrorBoundary>
       </Section>
 
       {(dispute.status === 'active' || dispute.status === 'pending') && (
@@ -128,6 +137,7 @@ export function Courtroom({ dispute }: CourtroomProps) {
             disputeId={dispute.id}
             onEvidenceSubmitted={(ev) => {
               console.log('Evidence submitted:', ev)
+              refetch?.()
             }}
           />
         </Section>
@@ -135,6 +145,7 @@ export function Courtroom({ dispute }: CourtroomProps) {
 
       {dispute.jurors.length > 0 && (
         <Section title={`Jurors (${dispute.jurors.length})`}>
+          <ErrorBoundary>
           <div className="space-y-3">
             {dispute.jurors.map(juror => (
               <div key={juror.walletAddress} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800 last:border-0">
@@ -177,6 +188,7 @@ export function Courtroom({ dispute }: CourtroomProps) {
               {' '}jurors have voted
             </div>
           </div>
+          </ErrorBoundary>
         </Section>
       )}
 
@@ -204,7 +216,9 @@ export function Courtroom({ dispute }: CourtroomProps) {
         <Section title="Your Vote">
           <JurorVotePanel
             disputeId={dispute.id}
-            hasVoted={false}
+            hasVoted={hasVoted}
+            currentVote={currentVote}
+            onVoteSubmitted={refetch}
           />
         </Section>
       )}

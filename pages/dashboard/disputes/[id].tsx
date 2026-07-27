@@ -120,7 +120,7 @@ const DisputeDetail: NextPage = () => {
               </div>
             )}
 
-            {status === 'success' && dispute && <Courtroom dispute={dispute} />}
+            {status === 'success' && dispute && <Courtroom dispute={dispute} refetch={refetch} />}
           </main>
         </div>
       </div>

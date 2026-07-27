@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Image from 'next/image'
 import type { Evidence as EvidenceType } from '../../../shared/types/dispute'
 
 export interface EvidenceViewerProps {
@@ -58,7 +59,18 @@ export function EvidenceViewer({ evidence }: EvidenceViewerProps) {
     <div className="divide-y divide-gray-100 dark:divide-gray-800">
       {evidence.map(ev => (
         <div key={ev.id} className="flex items-start gap-3 py-4 first:pt-0 last:pb-0">
-          <span className="text-xl flex-shrink-0 mt-1">{getIcon(ev.mimeType)}</span>
+          <div className="flex flex-col items-center gap-1 flex-shrink-0 mt-1">
+            <span className="text-xl">{getIcon(ev.mimeType)}</span>
+            {ev.mimeType.startsWith('image/') && (
+              <Image
+                src={`https://ipfs.io/ipfs/${ev.cid}`}
+                alt={ev.fileName}
+                width={64}
+                height={64}
+                className="w-16 h-16 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
+              />
+            )}
+          </div>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
