@@ -1,0 +1,55 @@
+{
+  "name": "TrustFlow — Decentralized Escrow on Stellar",
+  "short_name": "TrustFlow",
+  "description": "TrustFlow is a next-generation gig-economy protocol built on Stellar & Soroban. Trustless escrow, milestone payments, and community dispute resolution.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#030712",
+  "theme_color": "#3e63dd",
+  "categories": ["finance", "productivity", "business"],
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your gigs and manage escrows",
+      "url": "/dashboard"
+    },
+    {
+      "name": "Explore Gigs",
+      "short_name": "Explore",
+      "description": "Browse available gigs",
+      "url": "/explore"
+    },
+    {
+      "name": "Create Gig",
+      "short_name": "New Gig",
+      "description": "Create a new milestone-based gig",
+      "url": "/create-gig"
+    }
+  ]
+}
