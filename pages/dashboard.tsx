@@ -3,9 +3,12 @@ import type { NextPage } from 'next'
 import Head from 'next/head'
 import Link from 'next/link'
 import { Navbar } from '../components/organisms'
-import { USDCConverter, FileUpload, DeliverableViewer, DashboardSidebar } from '../components/molecules'
+import { USDCConverter, FileUpload, DeliverableViewer, DashboardSidebar, TransactionQueue } from '../components/molecules'
+import { OfflineBanner } from '../components/atoms'
 import type { UploadedFile, DeliverableFile } from '../components/molecules'
+import { useGlobalToast } from './_app'
 import { useUSDCPrice, formatUSD, convertToUSD } from '../hooks/useUSDCPrice'
+import { useOnlineStatus, useTransactionQueue } from '../hooks'
 
 interface NavItem {
   label: string
@@ -57,6 +60,28 @@ const Dashboard: NextPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { price: usdcPrice, status: priceStatus } = useUSDCPrice()
 
+  // Offline-first PWA hooks
+  const isOnline = useOnlineStatus()
+  const toast = useGlobalToast()
+
+  const {
+    queue,
+    pendingCount,
+    failedCount,
+    totalCount,
+    isProcessing,
+    enqueue,
+    remove,
+    retry,
+    retryAll,
+    clearCompleted,
+    clearAll,
+  } = useTransactionQueue({
+    info: toast.info,
+    error: toast.error,
+    warning: toast.warning,
+  })
+
   const escrowUSD =
     usdcPrice !== null ? formatUSD(convertToUSD(ESCROW_USDC, usdcPrice)) : null
 
@@ -74,10 +99,15 @@ const Dashboard: NextPage = () => {
       <Head>
         <title>Dashboard - TrustFlow</title>
         <meta name="description" content="Manage your gigs, disputes, and profile on TrustFlow" />
+        {/* PWA install prompt meta */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
       </Head>
 
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
         <Navbar />
+
+        {/* Offline banner — slides in when connectivity is lost */}
+        <OfflineBanner pendingCount={pendingCount} />
 
         <div className="flex">
           <DashboardSidebar
@@ -101,8 +131,40 @@ const Dashboard: NextPage = () => {
 
             {/* Dashboard header */}
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">My Gigs</h1>
-              <p className="text-gray-600 dark:text-gray-400">View and manage your active and completed gigs</p>
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">My Gigs</h1>
+                  <p className="text-gray-600 dark:text-gray-400">View and manage your active and completed gigs</p>
+                </div>
+                {/* Online status badge */}
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${
+                  isOnline
+                    ? 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300'
+                    : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
+                }`}>
+                  <span className={`w-2 h-2 rounded-full ${
+                    isOnline ? 'bg-green-500' : 'bg-amber-500 animate-pulse'
+                  }`} />
+                  {isOnline ? 'Connected' : 'Offline'}
+                  {!isOnline && pendingCount > 0 && ` · ${pendingCount} queued`}
+                </div>
+              </div>
+            </div>
+
+            {/* Transaction Queue — persistent offline transaction manager */}
+            <div className="mb-8">
+              <TransactionQueue
+                queue={queue}
+                pendingCount={pendingCount}
+                failedCount={failedCount}
+                totalCount={totalCount}
+                isProcessing={isProcessing}
+                onRemove={remove}
+                onRetry={retry}
+                onRetryAll={retryAll}
+                onClearCompleted={clearCompleted}
+                onClearAll={clearAll}
+              />
             </div>
 
             {/* Stats cards */}
@@ -206,6 +268,71 @@ const Dashboard: NextPage = () => {
                 />
               </div>
             )}
+
+            {/* Demo: Queue Test Transactions */}
+            <div className="mb-8 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6">
+              <div className="mb-4">
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                  Simulate Offline Transaction
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Test the offline transaction queue by queuing sample transactions.
+                  Transactions persist in IndexedDB and auto-process when connectivity is restored.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => enqueue({
+                    type: 'deposit',
+                    label: 'Deposit 100 USDC — Design Sprint #42',
+                    params: {
+                      gigId: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                      milestoneIndex: 0,
+                      token: 'CDLZFC3SYJYDZT7K3V6K5J6YK6GF7G4Y6F7G4Y6F7G4Y6F7G4Y6F7G4',
+                      amount: '100000000',
+                    },
+                  })}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
+                  disabled={isProcessing}
+                >
+                  🏦 Queue Deposit
+                </button>
+                <button
+                  onClick={() => enqueue({
+                    type: 'release',
+                    label: 'Release Milestone 1 — Bug Bounty Fix',
+                    params: {
+                      gigId: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                      milestoneIndex: 1,
+                    },
+                  })}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
+                  disabled={isProcessing}
+                >
+                  🚀 Queue Milestone Release
+                </button>
+                <button
+                  onClick={() => enqueue({
+                    type: 'open_dispute',
+                    label: 'Open Dispute — Design Sprint #42 Milestone 2',
+                    params: {
+                      gigId: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
+                      milestoneIndex: 2,
+                      reason: 'Deliverables do not match the agreed-upon specifications',
+                    },
+                  })}
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
+                  disabled={isProcessing}
+                >
+                  ⚖️ Queue Dispute
+                </button>
+              </div>
+              <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                Transactions are stored in IndexedDB and survive page reloads.{' '}
+                Go offline (in DevTools → Network → Offline), queue a transaction,{' '}
+                then come back online to see it auto-process.
+              </p>
+            </div>
 
             {/* Empty state */}
             <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-12 text-center">
