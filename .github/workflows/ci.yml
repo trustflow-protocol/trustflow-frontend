@@ -16,6 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        # Node 18 is the project minimum (.nvmrc). Node 20 covers the
+        # next LTS. sharp@0.33.5 and @testing-library/jest-dom@6 both
+        # support Node >=18.
         node-version: [18, 20]
 
     steps:
