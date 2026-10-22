@@ -1,47 +1,58 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  lint-and-build:
+  lint-typecheck-build:
+    name: Lint, Typecheck & Build (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
+        # Node 18 is the project minimum (.nvmrc). Node 20 covers the
+        # next LTS. sharp@0.33.5 and @testing-library/jest-dom@6 both
+        # support Node >=18.
         node-version: [18, 20]
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+          cache: npm
 
-      - name: Cache node_modules
-        id: cache-node-modules
+      - name: Cache npm dependencies
         uses: actions/cache@v4
         with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-node${{ matrix.node-version }}-${{ hashFiles('package-lock.json') }}
+          path: ~/.npm
+          key: npm-${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('package-lock.json') }}
           restore-keys: |
-            node-modules-${{ runner.os }}-node${{ matrix.node-version }}-
+            npm-${{ runner.os }}-node-${{ matrix.node-version }}-
 
       - name: Install dependencies
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: npm ci
+        run: npm install
 
-      - name: Run linter
-        run: npm run lint
+      - name: Verify contract bindings are up-to-date
+        run: npm run codegen:validate
 
-      - name: Run type check
+      - name: TypeScript type check
         run: npm run typecheck
 
-      - name: Build project
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
         run: npm run build
+
+      - name: Test
+        run: npm run test

@@ -25,6 +25,8 @@ export function useGlobalToast() {
 
 function MyApp({ Component, pageProps }: AppProps) {
   const { toasts, dismiss, success, error, warning, info } = useToast()
+  const { locale } = useRouter()
+  const activeLocale = locale ?? defaultLocale
 
   useEffect(() => {
     void initSentryClient()
