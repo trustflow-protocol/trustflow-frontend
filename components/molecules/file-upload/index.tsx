@@ -51,52 +51,59 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-/**
- * Simulates an IPFS pin upload with XHR-based progress tracking.
- *
- * In production, replace the fetch logic inside `simulateUpload` with a real
- * call to your backend endpoint, e.g.:
- *
- *   POST /api/ipfs/pin  (multipart/form-data, field "file")
- *   Response: { cid: string }
- *
- * The `onProgress` callback receives a 0–100 number.
- */
-function simulateUpload(
+async function uploadToIpfs(
   file: File,
   onProgress: (pct: number) => void,
   signal: AbortSignal
 ): Promise<{ cid: string }> {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const xhr = new XMLHttpRequest()
+
+  
+  xhr.timeout = 30000
+
   return new Promise((resolve, reject) => {
     if (signal.aborted) {
       reject(new DOMException('Upload aborted', 'AbortError'))
       return
     }
 
-    const totalSteps = 20
-    let step = 0
-
-    const tick = () => {
-      if (signal.aborted) {
-        reject(new DOMException('Upload aborted', 'AbortError'))
-        return
+    xhr.upload.addEventListener('progress', (e) => {
+      if (e.lengthComputable) {
+        onProgress(Math.round((e.loaded / e.total) * 100))
       }
-      step++
-      onProgress(Math.round((step / totalSteps) * 100))
-      if (step < totalSteps) {
-        setTimeout(tick, 80 + Math.random() * 60)
+    })
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText)
+          const cid: string = data.cid
+          const isValidV0 = /^Qm[1-9A-HJ-NP-Za-km-z]{44}$/.test(cid)
+          const isValidV1 = /^baf[0-9A-Za-z]{57,}$/.test(cid)
+          if (!isValidV0 && !isValidV1) {
+            reject(new Error(`Invalid IPFS CID returned from server: ${cid}`))
+            return
+          }
+          resolve({ cid })
+        } catch {
+          reject(new Error('Invalid response from server'))
+        }
       } else {
-        // Simulate a pseudo-CID (replace with real backend response)
-        const fakeCid = `Qm${Array.from({ length: 44 }, () =>
-          'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'[
-            Math.floor(Math.random() * 62)
-          ]
-        ).join('')}`
-        resolve({ cid: fakeCid })
+        reject(new Error(`Upload failed: ${xhr.status}`))
       }
-    }
+    })
 
-    setTimeout(tick, 100)
+    xhr.addEventListener('error', () => reject(new Error('Network error during upload')))
+    xhr.addEventListener('abort', () => reject(new DOMException('Upload aborted', 'AbortError')))
+    xhr.addEventListener('timeout', () => reject(new Error('Upload timed out after 30s')))
+
+    signal.addEventListener('abort', () => xhr.abort())
+
+    xhr.open('POST', '/api/ipfs/pin')
+    xhr.send(formData)
   })
 }
 
@@ -185,7 +192,7 @@ export function FileUpload({
       )
 
       try {
-        const { cid } = await simulateUpload(
+        const { cid } = await uploadToIpfs(
           entry.file,
           (pct) => {
             setFiles((prev) =>

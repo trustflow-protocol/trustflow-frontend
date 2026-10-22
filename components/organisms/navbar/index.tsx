@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useTranslations } from 'next-intl';
 import { ThemeToggle } from '../../atoms/theme-toggle';
 import { LocaleSwitcher } from '../../atoms/locale-switcher';
+import { ConnectButton } from '../../atoms/connect-button';
+import { WalletButton } from '../../atoms/wallet-button';
+import { useWallet } from '../../../hooks';
 
 const NAV_LINKS = [
   { key: 'home',        href: '/'            },
@@ -17,9 +20,62 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const t = useTranslations('Nav');
+  const tw = useTranslations('Wallet');
+  const {
+    account,
+    network,
+    isBusy,
+    error: walletError,
+    connect,
+    disconnect,
+  } = useWallet();
+
+  // Track the previous address so WalletButton can show a switch notice
+  // when another tab changes the active Freighter account.
+  const prevAddressRef = useRef<string | null>(null);
+  const [switchedFromAddress, setSwitchedFromAddress] = useState<string | null>(null);
+
+  useEffect(() => {
+    const current = account?.address ?? null;
+    const previous = prevAddressRef.current;
+
+    if (previous && current && previous !== current) {
+      // The account address changed — record the previous one for the notice
+      setSwitchedFromAddress(previous);
+    }
+
+    prevAddressRef.current = current;
+  }, [account?.address]);
+
+  const handleConnect = useCallback(() => {
+    connect();
+  }, [connect]);
+
+  const handleDisconnect = useCallback(() => {
+    disconnect();
+  }, [disconnect]);
 
   const toggle = () => setOpen((v) => !v);
   const close  = () => setOpen(false);
+
+  const walletSection = account ? (
+    <WalletButton
+      address={account.address}
+      network={network?.network}
+      onDisconnect={handleDisconnect}
+      switchAccountLabel={tw('switchAccount')}
+      disconnectLabel={tw('disconnect')}
+      syncedAcrossTabs
+      previousAddress={switchedFromAddress}
+      onDismissSwitchNotice={() => setSwitchedFromAddress(null)}
+    />
+  ) : (
+    <ConnectButton
+      label={t('connectWallet')}
+      onConnect={handleConnect}
+      isConnecting={isBusy && !walletError}
+    />
+  );
 
   return (
     <nav className="sticky top-0 z-50 flex items-center justify-between px-6 h-16 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 shadow-sm">
@@ -50,12 +106,7 @@ export function Navbar() {
       <div className="hidden md:flex items-center gap-3">
         <LocaleSwitcher />
         <ThemeToggle />
-        <Link
-          href="/escrow"
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-all hover:-translate-y-px"
-        >
-          {t('launchApp')}
-        </Link>
+        {walletSection}
       </div>
 
       {/* Hamburger */}
@@ -93,13 +144,7 @@ export function Navbar() {
           <div className="mt-3 flex items-center gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
             <LocaleSwitcher />
             <ThemeToggle />
-            <Link
-              href="/escrow"
-              onClick={close}
-              className="flex-1 text-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors"
-            >
-              {t('launchApp')}
-            </Link>
+            {walletSection}
           </div>
         </div>
       )}

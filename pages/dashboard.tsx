@@ -1,12 +1,21 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { NextPage } from 'next'
 import Head from 'next/head'
 import Link from 'next/link'
-import { useRouter } from 'next/router'
 import { Navbar } from '../components/organisms'
-import { USDCConverter, FileUpload } from '../components/molecules'
-import type { UploadedFile } from '../components/molecules'
+import { USDCConverter, FileUpload, DeliverableViewer, DashboardSidebar, EscrowMilestoneTracker } from '../components/molecules'
+import type { UploadedFile, DeliverableFile, TrackerMilestone } from '../components/molecules'
 import { useUSDCPrice, formatUSD, convertToUSD } from '../hooks/useUSDCPrice'
+import type { MilestoneStatus } from '../shared/contracts-gen/escrow'
+import type { RollbackEvent } from '../shared/optimistic/types'
+import {
+  applyOptimisticUpdate,
+  confirmUpdate,
+  rollbackUpdate,
+  getOptimisticState,
+  getEffectiveStatus,
+} from '../shared/optimistic/escrow-state'
+import type { MilestoneKey } from '../shared/optimistic/types'
 
 interface NavItem {
   label: string
@@ -18,6 +27,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: 'My Gigs', href: '/dashboard', icon: '💼', description: 'View and manage your active gigs' },
   { label: 'Disputes', href: '/dashboard/disputes', icon: '⚖️', description: 'Active dispute resolutions' },
+  { label: 'Contracts', href: '/dashboard/contracts', icon: '🔗', description: 'Contract bindings and interaction' },
   { label: 'Profile', href: '/dashboard/profile', icon: '👤', description: 'Your reputation and work history' },
   { label: 'Settings', href: '/dashboard/settings', icon: '⚙️', description: 'Account and preferences' },
 ]
@@ -25,12 +35,50 @@ const NAV_ITEMS: NavItem[] = [
 // Placeholder escrow balance in USDC for demo purposes
 const ESCROW_USDC = 0
 
+// Sample deliverable files for demonstration
+const SAMPLE_DELIVERABLES: DeliverableFile[] = [
+  {
+    id: '1',
+    name: 'milestone-1-report.md',
+    size: 15420,
+    type: 'text/markdown',
+    cid: 'QmYjtig7VJQ6XsnUjqqJvj7QaMcCAwtrgNdahSiFofrE7o',
+    uploadedAt: '2024-01-15T10:30:00Z',
+  },
+  {
+    id: '2', 
+    name: 'code-review-findings.pdf',
+    size: 2847392,
+    type: 'application/pdf',
+    cid: 'QmPChd2hVbrJ8bfo2CGIF2jXd3dKXH5grkCxfkeqyqJAyK',
+    uploadedAt: '2024-01-14T16:45:00Z',
+  },
+  {
+    id: '3',
+    name: 'test-results.json',
+    size: 8732,
+    type: 'application/json', 
+    cid: 'QmNLei78zWmzUdbeRB3CiUfAizWUrbeeZh5K1rhAQKCh51',
+    uploadedAt: '2024-01-14T14:20:00Z',
+  },
+]
+
+// ── Demo Milestones ────────────────────────────────────────────
+
+const DEMO_GIG_ID = '00000000deadbeef'
+
+const INITIAL_MILESTONES: TrackerMilestone[] = [
+  { index: 0, label: 'Design Mockups', amount: '500', token: 'USDC', status: 'Funded' },
+  { index: 1, label: 'Frontend Implementation', amount: '1200', token: 'USDC', status: 'Funded' },
+  { index: 2, label: 'Smart Contract Audit', amount: '800', token: 'USDC', status: 'Pending' },
+  { index: 3, label: 'Deployment & QA', amount: '500', token: 'USDC', status: 'Pending' },
+]
+
 const Dashboard: NextPage = () => {
-  const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { price: usdcPrice, status: priceStatus } = useUSDCPrice()
-
-  const isActive = (href: string) => router.pathname === href
+  const [lastRollback, setLastRollback] = useState<RollbackEvent | null>(null)
+  const [milestones] = useState<TrackerMilestone[]>(INITIAL_MILESTONES)
 
   const escrowUSD =
     usdcPrice !== null ? formatUSD(convertToUSD(ESCROW_USDC, usdcPrice)) : null
@@ -44,6 +92,94 @@ const Dashboard: NextPage = () => {
     console.error('IPFS pin failed for', entry.file.name, entry.error)
   }
 
+  // ── Optimistic tracker helpers ────────────────────────────
+
+  const getEffective = useCallback(
+    (milestoneIndex: number): MilestoneStatus => {
+      const key: MilestoneKey = { gigId: DEMO_GIG_ID, milestoneIndex }
+      const ms = milestones.find((m) => m.index === milestoneIndex)
+      return getEffectiveStatus(key, ms?.status ?? 'Pending')
+    },
+    [milestones],
+  )
+
+  const checkOptimistic = useCallback(
+    (milestoneIndex: number): boolean => {
+      const key: MilestoneKey = { gigId: DEMO_GIG_ID, milestoneIndex }
+      return getOptimisticState(key)?.isOptimistic ?? false
+    },
+    [],
+  )
+
+  /**
+   * Simulate an optimistic escrow action. Applies the optimistic update
+   * immediately, then after a short delay simulates the on-chain confirmation
+   * (or a random rollback for demo purposes).
+   */
+  const simulateAction = useCallback(
+    (milestoneIndex: number, currentStatus: MilestoneStatus, nextStatus: MilestoneStatus) => {
+      const key: MilestoneKey = { gigId: DEMO_GIG_ID, milestoneIndex }
+
+      try {
+        applyOptimisticUpdate(key, currentStatus, nextStatus)
+      } catch (err) {
+        console.error('Invalid transition:', err)
+        return
+      }
+
+      // Simulate a 2-second on-chain confirmation (20% chance of failure for demo)
+      setTimeout(() => {
+        const shouldFail = Math.random() < 0.2
+        if (shouldFail) {
+          const reason = 'Simulated ledger failure: transaction rejected by network'
+          rollbackUpdate(key, reason)
+          setLastRollback({
+            key,
+            previousStatus: currentStatus,
+            attemptedStatus: nextStatus,
+            reason,
+            rolledBackAt: Date.now(),
+          })
+        } else {
+          confirmUpdate(key)
+        }
+      }, 2000)
+    },
+    [],
+  )
+
+  const handleFund = useCallback(
+    (milestoneIndex: number) => {
+      const ms = milestones.find((m) => m.index === milestoneIndex)
+      if (ms) simulateAction(milestoneIndex, ms.status, 'Funded')
+    },
+    [milestones, simulateAction],
+  )
+
+  const handleRelease = useCallback(
+    (milestoneIndex: number) => {
+      const ms = milestones.find((m) => m.index === milestoneIndex)
+      if (ms) simulateAction(milestoneIndex, ms.status, 'Released')
+    },
+    [milestones, simulateAction],
+  )
+
+  const handleDispute = useCallback(
+    (milestoneIndex: number) => {
+      const ms = milestones.find((m) => m.index === milestoneIndex)
+      if (ms) simulateAction(milestoneIndex, ms.status, 'Disputed')
+    },
+    [milestones, simulateAction],
+  )
+
+  const handleRefund = useCallback(
+    (milestoneIndex: number) => {
+      const ms = milestones.find((m) => m.index === milestoneIndex)
+      if (ms) simulateAction(milestoneIndex, ms.status, 'Refunded')
+    },
+    [milestones, simulateAction],
+  )
+
   return (
     <>
       <Head>
@@ -55,57 +191,11 @@ const Dashboard: NextPage = () => {
         <Navbar />
 
         <div className="flex">
-          {/* Mobile sidebar backdrop */}
-          {sidebarOpen && (
-            <div
-              className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-              onClick={() => setSidebarOpen(false)}
-            />
-          )}
-
-          {/* Sidebar */}
-          <aside
-            className={`
-              fixed lg:sticky top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-50 transition-transform duration-300
-              ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-            `}
-          >
-            <nav className="p-4 space-y-1">
-              {NAV_ITEMS.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`
-                    flex items-start gap-3 px-3 py-2.5 rounded-lg transition-colors group
-                    ${
-                      isActive(item.href)
-                        ? 'bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                    }
-                  `}
-                >
-                  <span className="text-xl flex-shrink-0 mt-0.5">{item.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm">{item.label}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-tight">
-                      {item.description}
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </nav>
-
-            {/* Wallet info section */}
-            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-gray-800">
-              <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
-                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Connected Wallet</div>
-                <div className="text-sm font-mono text-gray-900 dark:text-gray-100 truncate">
-                  Not connected
-                </div>
-              </div>
-            </div>
-          </aside>
+          <DashboardSidebar
+            items={NAV_ITEMS}
+            open={sidebarOpen}
+            onClose={() => setSidebarOpen(false)}
+          />
 
           {/* Main content */}
           <main className="flex-1 p-6 lg:p-8">
@@ -207,6 +297,48 @@ const Dashboard: NextPage = () => {
                 onUploadError={handleUploadError}
                 multiple={true}
                 maxFileSizeBytes={50 * 1024 * 1024}
+              />
+            </div>
+
+            {/* Submitted Deliverables Viewer */}
+            {SAMPLE_DELIVERABLES.length > 0 && (
+              <div className="mb-8 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6">
+                <div className="mb-4">
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                    Submitted Deliverables
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    View and preview your submitted deliverable files. Markdown files can be previewed with full formatting.
+                  </p>
+                </div>
+                <DeliverableViewer
+                  files={SAMPLE_DELIVERABLES}
+                  onFileSelect={(file) => console.log('Selected file:', file)}
+                />
+              </div>
+            )}
+
+            {/* Escrow Milestone Tracker — optimistic UI demo */}
+            <div className="mb-8 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6">
+              <div className="mb-4">
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                  Escrow Milestones
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Track milestone progress with instant optimistic updates. Actions apply immediately
+                  and roll back automatically if the on-chain transaction fails.
+                </p>
+              </div>
+              <EscrowMilestoneTracker
+                gigId={DEMO_GIG_ID}
+                milestones={milestones}
+                getEffectiveStatus={getEffective}
+                isOptimistic={checkOptimistic}
+                onFund={handleFund}
+                onRelease={handleRelease}
+                onDispute={handleDispute}
+                onRefund={handleRefund}
+                lastRollback={lastRollback}
               />
             </div>
 

@@ -1,9 +1,9 @@
 import React from 'react'
 import styles from './style.module.css'
 import Image from 'next/image'
-import picture from '../../../assets/example.png'
+import picture from '../../../assets/example.webp'
 import { AuthorInfo } from '../../atoms'
-import avatar from '../../../assets/avatar.png'
+import avatar from '../../../assets/avatar.webp'
 
 export function Campaign() {
   return (
@@ -11,7 +11,14 @@ export function Campaign() {
       <h6>Starfund #821</h6>
       <h1>Planetary open-source photography</h1>
       <AuthorInfo author="Sam Stroop" dateTime="21 hours ago" image={avatar} />
-      <Image src={picture} width={642} height={294} alt="project image" />
+      <Image
+        src={picture}
+        width={642}
+        height={294}
+        alt="project image"
+        sizes="(max-width: 768px) 100vw, 642px"
+        priority
+      />
       <p>
         Hello! My name is Sam and I’m working with a team of three other
         passionate individuals to take photos of the planets in our solar system
