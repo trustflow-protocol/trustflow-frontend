@@ -1,0 +1,46 @@
+.markdownContent {
+  line-height: 1.6;
+}
+
+.markdownContent img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+
+.markdownContent video {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+
+/* Handle nested lists */
+.markdownContent ul ul,
+.markdownContent ol ol,
+.markdownContent ul ol,
+.markdownContent ol ul {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Task lists */
+.markdownContent input[type="checkbox"] {
+  margin-right: 0.5rem;
+}
+
+/* Code blocks with syntax highlighting support */
+.markdownContent pre code {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+/* Ensure proper spacing for consecutive elements */
+.markdownContent > *:first-child {
+  margin-top: 0;
+}
+
+.markdownContent > *:last-child {
+  margin-bottom: 0;
+}
