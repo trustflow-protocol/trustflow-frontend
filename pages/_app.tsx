@@ -1,5 +1,5 @@
 import type { AppProps } from 'next/app'
-import { createContext, useContext } from 'react'
+import { createContext, useContext, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { NextIntlClientProvider } from 'next-intl'
 import '../styles/globals.css'
@@ -25,7 +25,41 @@ export function useGlobalToast() {
   return context
 }
 
+/**
+ * Registers the PWA service worker for offline support.
+ * Runs once on mount in the browser only.
+ */
+function useRegisterServiceWorker() {
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      // Only register in production to avoid caching issues during development
+      if (process.env.NODE_ENV === 'production') {
+        navigator.serviceWorker
+          .register('/sw.js', { scope: '/' })
+          .then((registration) => {
+            console.log('[SW] Registered:', registration.scope)
+
+            // Listen for messages from the service worker
+            navigator.serviceWorker.addEventListener('message', (event) => {
+              if (event.data?.type === 'QUEUE_SYNC') {
+                console.log('[SW] Queue sync requested:', event.data.payload)
+              }
+              if (event.data?.type === 'PERIODIC_SYNC_TRIGGER') {
+                console.log('[SW] Periodic sync triggered — processing queue...')
+              }
+            })
+          })
+          .catch((err) => {
+            console.warn('[SW] Registration failed:', err)
+          })
+      }
+    }
+  }, [])
+}
+
 function MyApp({ Component, pageProps }: AppProps) {
+  useRegisterServiceWorker()
+
   const { toasts, dismiss, success, error, warning, info } = useToast()
   const { locale } = useRouter()
   const activeLocale = locale ?? defaultLocale
