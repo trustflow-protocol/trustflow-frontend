@@ -50,3 +50,4 @@ yarn-error.log*
 # Auto-generated contract bindings (regenerated via npm run codegen)
 /shared/contracts-gen
 fix.md
+config.bat
